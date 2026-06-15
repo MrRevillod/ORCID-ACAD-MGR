@@ -1,0 +1,102 @@
+services:
+  server:
+    container_name: orcid-acad-mgr-server
+    build:
+      context: .
+      dockerfile: ./apps/server/Dockerfile
+      target: dev
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 600s
+    ports:
+      - "8000"
+    networks:
+      - orcid-acad-mgr-network
+    volumes:
+      - ./:/app
+      - server_target:/app/target
+
+  nginx:
+    container_name: orcid-acad-mgr-nginx
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      server:
+        condition: service_healthy
+      client:
+        condition: service_healthy
+    networks:
+      - orcid-acad-mgr-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: orcid-acad-mgr-postgres
+    command: postgres -c log_min_messages=ERROR -c log_statement=none -c log_duration=off -c log_min_duration_statement=-1 -c log_checkpoints=off
+    ports:
+      - "5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    networks:
+      - orcid-acad-mgr-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  client:
+    container_name: orcid-acad-mgr-client
+    build:
+      context: .
+      dockerfile: apps/client/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    user: "${UID:-1000}:${GID:-1000}"
+    env_file:
+      - .env
+    environment:
+      - CI=true
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - VITE_CACHE_DIR=/tmp/.vite
+      - NODE_OPTIONS=
+      - NPM_CONFIG_NODE_OPTIONS=
+    volumes:
+      - ./apps/client:/app
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:5173 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    networks:
+      - orcid-acad-mgr-network
+
+networks:
+  orcid-acad-mgr-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  server_target:
+  cargo_cache:

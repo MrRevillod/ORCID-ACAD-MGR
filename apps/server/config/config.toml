@@ -1,0 +1,34 @@
+[application]
+name = "ORCID ACAD MGR Server"
+
+[web]
+port = 8000
+host = "0.0.0.0"
+body-limit = "5MB"
+request-timeout = { enabled = true, timeout = "15s" }
+router-prefix = "/api"
+
+[postgres-db]
+user = "${POSTGRES_USER}"
+password = "${POSTGRES_PASSWORD}"
+database = "${POSTGRES_DB}"
+port = "${POSTGRES_PORT}"
+host = "${POSTGRES_HOST}"
+migrations_path = "config/migrations"
+min_connections = 1
+max_connections = 10
+acquire_timeout_ms = 5000
+
+[auth]
+jwt_secret = "${JWT_SECRET}"
+access_exp_minutes = 15
+refresh_exp_days = 7
+
+[tracing]
+enabled = true
+display = false
+filter = "info,sword=info,sqlx=error"
+format = "dev"
+time-style = "none"
+time-pattern = "%H:%M:%S"
+with-fields = []

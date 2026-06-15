@@ -1,0 +1,28 @@
+name: Rust CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "apps/server/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/rust-ci.yml"
+  pull_request:
+    branches: [ main ]
+    paths:
+      - "apps/server/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/rust-ci.yml"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo fmt --check
+      - run: cargo clippy -- -D warnings
+      - run: cargo test
