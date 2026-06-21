@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::shared::{AppResult, Database};
 use crate::university::WorkPositionFilter;
-use crate::university::work_positions::AcademicWorkPosition;
+use crate::university::work_positions::{AcademicWorkPosition, AcademicWorkPositionId};
 use sqlx::{Postgres, QueryBuilder};
 use sword::prelude::*;
 
@@ -14,17 +14,8 @@ pub struct AcademicWorkPositionsRepository {
 impl AcademicWorkPositionsRepository {
     pub async fn list(&self, filter: WorkPositionFilter) -> AppResult<Vec<AcademicWorkPosition>> {
         let mut query = QueryBuilder::<Postgres>::new(
-            "SELECT code, name FROM academic_work_positions WHERE 1=1",
+            "SELECT id, code, name FROM academic_work_positions WHERE 1=1",
         );
-
-        if let Some(c) = filter.code {
-            let pattern = format!("%{}%", c.trim());
-
-            query
-                .push(" AND (code ILIKE ")
-                .push_bind(pattern.clone())
-                .push(")");
-        }
 
         if let Some(n) = filter.name {
             let pattern = format!("%{}%", n.trim());
@@ -43,11 +34,11 @@ impl AcademicWorkPositionsRepository {
         Ok(positions)
     }
 
-    pub async fn find_by_code(&self, code: &str) -> AppResult<Option<AcademicWorkPosition>> {
+    pub async fn find_by_id(&self, id: &AcademicWorkPositionId) -> AppResult<Option<AcademicWorkPosition>> {
         let item = sqlx::query_as::<_, AcademicWorkPosition>(
-            "SELECT code, name FROM academic_work_positions WHERE code = $1",
+            "SELECT id, code, name FROM academic_work_positions WHERE id = $1",
         )
-        .bind(code)
+        .bind(id)
         .fetch_optional(self.database.pool())
         .await?;
 
@@ -55,7 +46,8 @@ impl AcademicWorkPositionsRepository {
     }
 
     pub async fn save(&self, position: &AcademicWorkPosition) -> AppResult<()> {
-        sqlx::query("INSERT INTO academic_work_positions (code, name) VALUES ($1, $2)")
+        sqlx::query("INSERT INTO academic_work_positions (id, code, name) VALUES ($1, $2, $3)")
+            .bind(position.id)
             .bind(&position.code)
             .bind(&position.name)
             .execute(self.database.pool())

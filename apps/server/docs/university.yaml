@@ -81,7 +81,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Faculty"
-        "422":
+        "400":
           description: Error de validación en los datos de entrada
           content:
             application/json:
@@ -183,7 +183,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Department"
-        "422":
+        "400":
           description: Error de validación en los datos de entrada
           content:
             application/json:
@@ -281,7 +281,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Career"
-        "422":
+        "400":
           description: Error de validación en los datos de entrada
           content:
             application/json:
@@ -380,7 +380,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AcademicWorkPosition"
-        "422":
+        "400":
           description: Error de validación en los datos de entrada
           content:
             application/json:
@@ -389,21 +389,22 @@ paths:
       security:
         - CookieAuth: []
 
-  /work-positions/{code}:
+  /work-positions/{id}:
     get:
       tags:
         - Cargos Laborales
-      summary: Obtener cargo laboral por código
-      description: Obtiene un cargo laboral específico mediante su código textual.
+      summary: Obtener cargo laboral por ID
+      description: Obtiene un cargo laboral específico mediante su UUID.
       operationId: getWorkPosition
       parameters:
-        - name: code
+        - name: id
           in: path
-          description: Código textual del cargo laboral
+          description: UUID del cargo laboral
           required: true
           schema:
             type: string
-          example: jefe_carrera
+            format: uuid
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
       responses:
         "200":
           description: Cargo laboral encontrado
@@ -565,14 +566,19 @@ components:
       description: Representa un cargo laboral académico
       type: object
       required:
+        - id
         - code
         - name
       properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID único generado automáticamente
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
         code:
           type: string
-          description: Código único textual del cargo
-          minLength: 1
-          maxLength: 50
+          description: Código único textual del cargo (autogenerado)
+          readOnly: true
           example: jefe_carrera
         name:
           type: string
@@ -585,15 +591,8 @@ components:
       description: Datos de entrada para crear un cargo laboral
       type: object
       required:
-        - code
         - name
       properties:
-        code:
-          type: string
-          description: Código único textual del cargo
-          minLength: 1
-          maxLength: 50
-          example: jefe_carrera
         name:
           type: string
           description: Nombre descriptivo del cargo
@@ -636,7 +635,7 @@ components:
         status:
           type: integer
           description: Código de estado HTTP
-          example: 422
+          example: 400
         message:
           type: string
           description: Mensaje de error general

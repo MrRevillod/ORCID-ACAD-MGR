@@ -11,7 +11,7 @@ CREATE TABLE academics (
 	sex sex NOT NULL,
 	birth_date DATE NOT NULL,
 	joined_at DATE NOT NULL DEFAULT CURRENT_DATE,
-	work_position_code TEXT REFERENCES academic_work_positions(code),
+	work_position_id UUID REFERENCES academic_work_positions(id),
 	work_position_details TEXT,
 	department_id UUID NOT NULL REFERENCES departments(id),
 	career_id UUID REFERENCES careers(id),

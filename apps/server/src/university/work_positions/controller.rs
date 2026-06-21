@@ -19,10 +19,10 @@ impl WorkPositionsController {
         Ok(positions)
     }
 
-    #[get("/{code}")]
+    #[get("/{id}")]
     pub async fn get_position(&self, req: Request) -> WebResult<AcademicWorkPosition> {
-        let code = req.param::<String>("code")?;
-        let position = self.positions.find_by_code(&code).await?;
+        let id = req.param::<AcademicWorkPositionId>("id")?;
+        let position = self.positions.find_by_id(&id).await?;
 
         Ok(position)
     }

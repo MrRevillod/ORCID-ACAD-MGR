@@ -4,22 +4,22 @@ use thiserror::Error;
 #[derive(Debug, Error, HttpError)]
 pub enum UniversityError {
     // Careers errors
-    #[http(code = 404, message = "Carrera no encontrada")]
+    #[http(code = 404, message = "La Carrera no fue encontrada")]
     #[error("Career not found")]
     CareerNotFound,
 
     // Departments errors
-    #[http(code = 404, message = "Departamento no encontrado")]
+    #[http(code = 404, message = "El Departamento no fue encontrado")]
     #[error("Department not found")]
     DepartmentNotFound,
 
     // Faculties errors
-    #[http(code = 404, message = "Facultad no encontrada")]
+    #[http(code = 404, message = "La Facultad no fue encontrada")]
     #[error("Faculty not found")]
     FacultyNotFound,
 
     // Work Positions errors
-    #[http(code = 404, message = "Puesto de trabajo no encontrado")]
+    #[http(code = 404, message = "El Cargo no fue encontrado")]
     #[error("Work position not found")]
     WorkPositionNotFound,
 }

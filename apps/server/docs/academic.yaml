@@ -779,7 +779,7 @@ components:
         - sex
         - birth_date
         - joined_at
-        - work_position_code
+        - work_position_id
         - department_id
         - uct_working_hours
         - acad_category_options_id
@@ -835,10 +835,11 @@ components:
             Fecha de ingreso a la universidad. No puede ser futura
             ni anterior a la fundación de la UCT (1959-09-08).
           example: "2010-05-01"
-        work_position_code:
+        work_position_id:
           type: string
-          description: Código del cargo laboral
-          example: docente
+          format: uuid
+          description: UUID del cargo laboral
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
         work_position_details:
           type: string
           description: Detalles adicionales del cargo
@@ -923,7 +924,7 @@ components:
         status:
           type: integer
           description: Código de estado HTTP
-          example: 422
+          example: 400
         message:
           type: string
           description: Mensaje de error general

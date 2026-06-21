@@ -1,7 +1,7 @@
 use std::sync::LazyLock;
 
 use crate::academic::{Academic, AcademicCategoryOptionId, Sex};
-use crate::university::{CareerId, DepartmentId};
+use crate::university::{AcademicWorkPositionId, CareerId, DepartmentId};
 
 use chrono::{NaiveDate, Utc};
 use regex::Regex;
@@ -60,7 +60,7 @@ pub struct CreateAcademicDto {
 
     #[validate(custom(function = "validate_joined_at"))]
     pub joined_at: NaiveDate,
-    pub work_position_code: String,
+    pub work_position_id: AcademicWorkPositionId,
     pub work_position_details: Option<String>,
     pub department_id: DepartmentId,
     pub career_id: Option<CareerId>,
@@ -138,7 +138,7 @@ impl From<CreateAcademicDto> for Academic {
             .sex(input.sex)
             .birth_date(input.birth_date)
             .joined_at(input.joined_at)
-            .work_position_code(input.work_position_code)
+            .work_position_id(input.work_position_id)
             .maybe_work_position_details(input.work_position_details)
             .department_id(input.department_id)
             .maybe_career_id(input.career_id)

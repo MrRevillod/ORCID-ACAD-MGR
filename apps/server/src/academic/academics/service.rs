@@ -1,10 +1,13 @@
-use crate::{academic::*, shared::AppResult};
+use crate::{academic::*, shared::AppResult, university::*};
 use std::sync::Arc;
 use sword::prelude::*;
 
 #[injectable]
 pub struct AcademicsService {
     academics: Arc<AcademicsRepository>,
+    departments: Arc<DepartmentsRepository>,
+    careers: Arc<CareersRepository>,
+    work_positions: Arc<AcademicWorkPositionsRepository>,
 }
 
 impl AcademicsService {
@@ -27,6 +30,43 @@ impl AcademicsService {
 
     pub async fn create(&self, input: CreateAcademicDto) -> AppResult<AcademicView> {
         let academic = Academic::from(input);
+
+        if self.academics.find_by_rut(&academic.rut).await?.is_some() {
+            return Err(AcademicError::AcademicRutAlreadyExists)?;
+        }
+
+        if self
+            .academics
+            .find_by_orcid(&academic.orcid)
+            .await?
+            .is_some()
+        {
+            return Err(AcademicError::AcademicOrcidAlreadyExists)?;
+        }
+
+        if self
+            .departments
+            .find_by_id(&academic.department_id)
+            .await?
+            .is_none()
+        {
+            return Err(UniversityError::DepartmentNotFound)?;
+        }
+
+        if let Some(career_id) = academic.career_id
+            && self.careers.find_by_id(&career_id).await?.is_none()
+        {
+            return Err(UniversityError::CareerNotFound)?;
+        }
+
+        if self
+            .work_positions
+            .find_by_id(&academic.work_position_id)
+            .await?
+            .is_none()
+        {
+            return Err(UniversityError::WorkPositionNotFound)?;
+        }
 
         self.academics.save(&academic).await?;
         self.find_view_by_id(&academic.id).await

@@ -5,13 +5,6 @@ use validator::Validate;
 pub struct CreateAcademicWorkPositionDto {
     #[validate(length(
         min = 1,
-        max = 50,
-        message = "El código debe tener entre 1 y 50 caracteres"
-    ))]
-    pub code: String,
-
-    #[validate(length(
-        min = 1,
         max = 255,
         message = "El nombre debe tener entre 1 y 255 caracteres"
     ))]
@@ -20,13 +13,6 @@ pub struct CreateAcademicWorkPositionDto {
 
 #[derive(Debug, Serialize, Deserialize, Validate, Default)]
 pub struct GetWorkPositionsQuery {
-    #[validate(length(
-        min = 1,
-        max = 50,
-        message = "El código debe tener entre 1 y 50 caracteres"
-    ))]
-    pub code: Option<String>,
-
     #[validate(length(
         min = 1,
         max = 255,

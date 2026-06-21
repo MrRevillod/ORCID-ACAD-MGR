@@ -2,7 +2,7 @@ use bon::Builder;
 
 use crate::academic::AcademicCategoryOptionId;
 use crate::shared::{Entity, Id};
-use crate::university::{CareerId, DepartmentId};
+use crate::university::{AcademicWorkPositionId, CareerId, DepartmentId};
 
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
@@ -28,11 +28,11 @@ pub struct Academic {
     pub paternal_surname: String,
     pub maternal_surname: String,
     pub email: String,
-    pub orcid: Option<String>,
+    pub orcid: String,
     pub sex: Sex,
     pub birth_date: NaiveDate,
     pub joined_at: NaiveDate,
-    pub work_position_code: Option<String>,
+    pub work_position_id: AcademicWorkPositionId,
     pub work_position_details: Option<String>,
     pub department_id: DepartmentId,
     pub career_id: Option<CareerId>,

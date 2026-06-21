@@ -1,16 +1,17 @@
 CREATE TABLE academic_work_positions (
-	code TEXT PRIMARY KEY,
+	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+	code TEXT NOT NULL UNIQUE,
 	name TEXT NOT NULL
 );
 
-INSERT INTO academic_work_positions (code, name) VALUES
-('uknown', 'Desconocido'),
-('docente', 'Docente'),
-('jefe_carrera', 'Jefe(a) de Carrera'),
-('director_departamento', 'Director(a) de Departamento'),
-('ceda', 'CEDA'),
-('director', 'Director(a)'),
-('vicedecano_decano_interino', 'Vicedecano(a) - Decano(a) Interino(a)'),
-('jefe_carrera_ceda', 'Jefe(a) de Carrera - CEDA'),
-('docente_reemplazo', 'Docente de Reemplazo'),
-('director_magister', 'Director Magister');
+INSERT INTO academic_work_positions (id, code, name) VALUES
+(gen_random_uuid(), 'uknown', 'Desconocido'),
+(gen_random_uuid(), 'docente', 'Docente'),
+(gen_random_uuid(), 'jefe_carrera', 'Jefe(a) de Carrera'),
+(gen_random_uuid(), 'director_departamento', 'Director(a) de Departamento'),
+(gen_random_uuid(), 'ceda', 'CEDA'),
+(gen_random_uuid(), 'director', 'Director(a)'),
+(gen_random_uuid(), 'vicedecano_decano_interino', 'Vicedecano(a) - Decano(a) Interino(a)'),
+(gen_random_uuid(), 'jefe_carrera_ceda', 'Jefe(a) de Carrera - CEDA'),
+(gen_random_uuid(), 'docente_reemplazo', 'Docente de Reemplazo'),
+(gen_random_uuid(), 'director_magister', 'Director Magister');

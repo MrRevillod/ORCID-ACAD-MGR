@@ -34,7 +34,7 @@ impl AcademicsRepository {
                 co.name AS nationality,
                 a.city
             FROM academics a
-            LEFT JOIN academic_work_positions wp ON a.work_position_code = wp.code
+            LEFT JOIN academic_work_positions wp ON a.work_position_id = wp.id
             JOIN departments d ON a.department_id = d.id
             LEFT JOIN careers c ON a.career_id = c.id
             JOIN academic_category_options aco ON a.acad_category_options_id = aco.id
@@ -105,7 +105,7 @@ impl AcademicsRepository {
                 co.name AS nationality,
                 a.city
             FROM academics a
-            LEFT JOIN academic_work_positions wp ON a.work_position_code = wp.code
+            LEFT JOIN academic_work_positions wp ON a.work_position_id = wp.id
             JOIN departments d ON a.department_id = d.id
             LEFT JOIN careers c ON a.career_id = c.id
             JOIN academic_category_options aco ON a.acad_category_options_id = aco.id
@@ -121,9 +121,27 @@ impl AcademicsRepository {
         Ok(item)
     }
 
+    pub async fn find_by_rut(&self, rut: &str) -> AppResult<Option<Academic>> {
+        let item = sqlx::query_as::<_, Academic>("SELECT * FROM academics WHERE rut = $1")
+            .bind(rut)
+            .fetch_optional(self.database.pool())
+            .await?;
+
+        Ok(item)
+    }
+
     pub async fn find_by_id(&self, id: &AcademicId) -> AppResult<Option<Academic>> {
         let item = sqlx::query_as::<_, Academic>("SELECT * FROM academics WHERE id = $1")
             .bind(id)
+            .fetch_optional(self.database.pool())
+            .await?;
+
+        Ok(item)
+    }
+
+    pub async fn find_by_orcid(&self, orcid: &str) -> AppResult<Option<Academic>> {
+        let item = sqlx::query_as::<_, Academic>("SELECT * FROM academics WHERE orcid = $1")
+            .bind(orcid)
             .fetch_optional(self.database.pool())
             .await?;
 
@@ -134,7 +152,7 @@ impl AcademicsRepository {
         let query = r#"
         INSERT INTO academics (
             id, rut, names, paternal_surname, maternal_surname, email, orcid, sex,
-            birth_date, joined_at, work_position_code, work_position_details,
+            birth_date, joined_at, work_position_id, work_position_details,
             department_id, career_id, uct_working_hours, acad_category_options_id,
             acad_category_hours, annual_discount_hours, nationality_code, city
         ) VALUES (
@@ -153,7 +171,7 @@ impl AcademicsRepository {
             .bind(academic.sex)
             .bind(academic.birth_date)
             .bind(academic.joined_at)
-            .bind(&academic.work_position_code)
+            .bind(academic.work_position_id)
             .bind(&academic.work_position_details)
             .bind(academic.department_id)
             .bind(academic.career_id)
