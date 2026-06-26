@@ -2,14 +2,13 @@ import * as v from "valibot"
 
 export type User = {
 	id: string
-	username: string
 	name: string
 	email: string
-	role: "student" | "func" | "admin"
+	role: "admin"
 }
 
 export const loginSchema = v.object({
-	username: v.pipe(v.string(), v.trim(), v.minLength(1, "El usuario es obligatorio.")),
+	email: v.pipe(v.string(), v.email("El correo electrónico no es válido.")),
 	password: v.pipe(v.string(), v.minLength(1, "La contraseña es obligatoria.")),
 })
 

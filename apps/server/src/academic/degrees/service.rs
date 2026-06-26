@@ -26,4 +26,30 @@ impl DegreesService {
 
         Ok(degree)
     }
+
+    pub async fn update(&self, degree_id: &DegreeId, input: UpdateDegreeDto) -> AppResult<Degree> {
+        let Some(mut degree) = self.degrees.find_by_id(degree_id).await? else {
+            return Err(AcademicError::DegreeNotFound)?;
+        };
+
+        if let Some(name) = input.name {
+            degree.name = name;
+        }
+
+        if let Some(university) = input.university {
+            degree.university = university;
+        }
+
+        if let Some(obtained_at) = input.obtained_at {
+            degree.obtained_at = obtained_at;
+        }
+
+        if let Some(country_code) = input.country_code {
+            degree.country_code = country_code;
+        }
+
+        self.degrees.save(&degree).await?;
+
+        Ok(degree)
+    }
 }

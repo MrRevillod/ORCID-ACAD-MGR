@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createQuery } from "@tanstack/svelte-query"
+	import { createQuery, createMutation, useQueryClient } from "@tanstack/svelte-query"
 	import { page } from "$app/stores"
 	import {
 		ChevronLeft,
@@ -10,12 +10,29 @@
 		BookOpen,
 		Loader2,
 		AlertCircle,
+		Pencil,
+		Plus,
 	} from "@lucide/svelte"
 
 	import { academicsService } from "$lib/services/academics.service"
 	import { degreesService } from "$lib/services/degrees.service"
+	import Dialog from "$lib/components/ui/dialog.svelte"
+	import Input from "$lib/components/ui/input.svelte"
+	import Select from "$lib/components/ui/select.svelte"
+	import Button from "$lib/components/ui/button.svelte"
 	import Badge from "$lib/components/ui/badge.svelte"
-	import type { Sex, AcademicPlanta, AcademicOption } from "$lib/types"
+	import { CLf64Value } from "$lib/shared/value-objects/cl-f64.value"
+	import { DateValue } from "$lib/shared/value-objects/date.value"
+	import { CountryValue } from "$lib/shared/value-objects/country.value"
+	import { countryItems } from "$lib/shared/countries"
+	import {
+		DEGREE_KIND,
+		type Degree,
+		type DegreeKind,
+		type Sex,
+		type AcademicPlanta,
+		type AcademicOption,
+	} from "$lib/types"
 
 	const id = $derived($page.params.id ?? "")
 
@@ -32,10 +49,12 @@
 	}))
 
 	const academic = $derived(academicQuery.data)
-	const degrees = $derived(
-		(degreesQuery.data ?? []).sort((a, b) => {
-			if (a.kind === b.kind) return 0
-			return a.kind === "base" ? -1 : 1
+	const degreeSlots = $derived.by<
+		Array<Degree | { kind: (typeof DEGREE_KIND)[number]; isPlaceholder: true }>
+	>(() =>
+		DEGREE_KIND.map((kind) => {
+			const found = (degreesQuery.data ?? []).find((d) => d.kind === kind)
+			return found ?? { kind, isPlaceholder: true as const }
 		}),
 	)
 
@@ -46,11 +65,6 @@
 	const initials = $derived(
 		academic ? (academic.names.charAt(0) + academic.paternalSurname.charAt(0)).toUpperCase() : "",
 	)
-
-	function fmt(iso: string): string {
-		const d = new Date(iso + "T00:00:00")
-		return d.toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit", year: "numeric" })
-	}
 
 	function sexLabel(s: Sex): string {
 		switch (s) {
@@ -78,6 +92,74 @@
 				return "Docencia"
 			case "research":
 				return "Investigación"
+		}
+	}
+
+	const queryClient = useQueryClient()
+
+	let showDialog = $state(false)
+	let editingDegree = $state<Degree | null>(null)
+	let name = $state("")
+	let university = $state("")
+	let obtainedAt = $state("")
+	let kind = $state<DegreeKind>("base")
+	let countryCode = $state("CL")
+
+	function openCreate(k: DegreeKind) {
+		editingDegree = null
+		kind = k
+		name = ""
+		university = ""
+		obtainedAt = ""
+		countryCode = "CL"
+		showDialog = true
+	}
+
+	function openEdit(deg: Degree) {
+		editingDegree = deg
+		kind = deg.kind
+		name = deg.name
+		university = deg.university
+		obtainedAt = deg.obtainedAt
+		countryCode = deg.countryCode
+		showDialog = true
+	}
+
+	const createDeg = createMutation(() => ({
+		mutationFn: () =>
+			degreesService.create({
+				academicId: id,
+				name,
+				university,
+				obtainedAt,
+				kind,
+				countryCode,
+			}),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ["degrees", id] })
+			showDialog = false
+		},
+	}))
+
+	const updateDeg = createMutation(() => ({
+		mutationFn: (degId: string) =>
+			degreesService.update(degId, {
+				name: name || undefined,
+				university: university || undefined,
+				obtainedAt: obtainedAt || undefined,
+				countryCode: countryCode || undefined,
+			}),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ["degrees", id] })
+			showDialog = false
+		},
+	}))
+
+	function handleSave() {
+		if (editingDegree) {
+			updateDeg.mutate(editingDegree.id)
+		} else {
+			createDeg.mutate()
 		}
 	}
 </script>
@@ -127,7 +209,7 @@
 							<div class="flex items-center gap-3 text-sm">
 								<Calendar class="size-4 shrink-0 text-corp-yellow" />
 								<div>
-									<p class="text-white/90">{fmt(academic.birthDate)}</p>
+									<p class="text-white/90">{DateValue.formatDate(academic.birthDate)}</p>
 									<p class="text-xs text-white/60">{sexLabel(academic.sex)}</p>
 								</div>
 							</div>
@@ -136,7 +218,7 @@
 
 					<div class="border-t border-white/10 px-6 py-3">
 						<p class="text-xs text-white/50">
-							Ingreso {fmt(academic.joinedAt)}
+							Ingreso {DateValue.formatDate(academic.joinedAt)}
 						</p>
 					</div>
 				</aside>
@@ -167,9 +249,11 @@
 								</p>
 							</div>
 							<div>
-								<p class="text-xs font-medium tracking-wide uppercase text-corp-gray">JCE</p>
+								<p class="text-xs font-medium tracking-wide uppercase text-corp-gray">
+									Jornada Completa Equivalente
+								</p>
 								<p class="mt-1 text-[15px] font-medium text-[#1a1a1a]">
-									{academic.jce.toLocaleString("es-CL")}
+									{CLf64Value.format(academic.jce)}
 								</p>
 							</div>
 						</div>
@@ -201,10 +285,10 @@
 							</div>
 							<div>
 								<p class="text-xs font-medium tracking-wide uppercase text-corp-gray">
-									Horas categoría
+									Horas de categoría y opción
 								</p>
 								<p class="mt-1 text-[15px] font-medium text-[#1a1a1a]">
-									{academic.acadCategoryHours?.toLocaleString("es-CL") ?? "—"} semanales
+									{academic.acadCategoryHours?.toLocaleString("es-CL") ?? "—"} horas
 								</p>
 							</div>
 							<div>
@@ -212,7 +296,7 @@
 									Descuento anual
 								</p>
 								<p class="mt-1 text-[15px] font-medium text-[#1a1a1a]">
-									{academic.annualDiscountHours.toLocaleString("es-CL")} horas
+									{CLf64Value.format(academic.annualDiscountHours)} horas
 								</p>
 							</div>
 						</div>
@@ -230,40 +314,58 @@
 							<div class="flex items-center justify-center py-8">
 								<Loader2 class="size-5 animate-spin text-corp-gray" />
 							</div>
-						{:else if degrees.length > 0}
+						{:else}
 							<div class="relative">
-								{#each degrees as deg, i (deg.id)}
-									<div class="relative flex gap-5 {i < degrees.length - 1 ? 'pb-8' : ''}">
+								{#each degreeSlots as slot, i (slot.kind)}
+									<div class="relative flex gap-5 {i < degreeSlots.length - 1 ? 'pb-8' : ''}">
 										<div class="flex flex-col items-center">
 											<div
-												class="z-10 size-3 shrink-0 rounded-full {deg.kind === 'base'
-													? 'bg-corp-blue'
-													: 'bg-corp-yellow'}"
+												class="z-10 size-3 shrink-0 rounded-full {slot.isPlaceholder
+													? 'bg-corp-gray/30'
+													: slot.kind === 'base'
+														? 'bg-corp-blue'
+														: 'bg-corp-yellow'}"
 											></div>
-											{#if i < degrees.length - 1}
+											{#if i < degreeSlots.length - 1}
 												<div class="mt-1 w-px grow bg-corp-gray/20"></div>
 											{/if}
 										</div>
 										<div class="min-w-0 flex-1">
 											<div class="mb-1 flex items-center gap-2">
-												<Badge variant={deg.kind === "base" ? "base" : "advanced"}>
-													{deg.kind === "base" ? "Título Profesional" : "Grado Académico"}
+												<Badge variant={slot.kind === "base" ? "base" : "advanced"}>
+													{slot.kind === "base" ? "Título Profesional" : "Grado Académico"}
 												</Badge>
+												{#if !slot.isPlaceholder}
+													<button
+														class="flex size-6 items-center justify-center rounded-md text-corp-gray/40 transition-colors hover:text-corp-blue"
+														onclick={() => openEdit(slot)}
+													>
+														<Pencil class="size-3.5" />
+													</button>
+												{/if}
 											</div>
-											<p class="text-[15px] font-medium text-[#1a1a1a]">{deg.name}</p>
-											<p class="mt-1 text-sm text-corp-gray">
-												{deg.university}
-												<span class="mx-1.5 text-corp-gray/40">·</span>
-												{deg.countryCode}
-												<span class="mx-1.5 text-corp-gray/40">·</span>
-												{fmt(deg.obtainedAt)}
-											</p>
+											{#if slot.isPlaceholder}
+												<button
+													class="mt-1 inline-flex items-center gap-1.5 text-sm text-corp-gray/50 transition-colors hover:text-corp-blue"
+													onclick={() => openCreate(slot.kind)}
+												>
+													<Plus class="size-3.5" />
+													Agregar
+												</button>
+											{:else}
+												<p class="text-[15px] font-medium text-[#1a1a1a]">{slot.name}</p>
+												<p class="mt-1 text-sm text-corp-gray">
+													{slot.university}
+													<span class="mx-1.5 text-corp-gray/40">·</span>
+													{CountryValue.format(slot.countryCode)}
+													<span class="mx-1.5 text-corp-gray/40">·</span>
+													{DateValue.formatDate(slot.obtainedAt)}
+												</p>
+											{/if}
 										</div>
 									</div>
 								{/each}
 							</div>
-						{:else}
-							<p class="text-sm text-corp-gray">No se registran grados académicos.</p>
 						{/if}
 					</section>
 				</div>
@@ -271,3 +373,60 @@
 		</div>
 	{/if}
 </div>
+
+<Dialog bind:open={showDialog} title={editingDegree ? "Editar grado" : "Nuevo grado"}>
+	<form
+		class="grid gap-4"
+		onsubmit={(e) => {
+			e.preventDefault()
+			handleSave()
+		}}
+	>
+		<label class="grid gap-1.5">
+			<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Nombre</span>
+			<Input bind:value={name} placeholder="Ej: Magíster en Ciencias" required />
+		</label>
+		<label class="grid gap-1.5">
+			<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Universidad</span>
+			<Input bind:value={university} placeholder="Ej: Universidad Católica de Temuco" required />
+		</label>
+		<div class="grid grid-cols-2 gap-4">
+			<label class="grid gap-1.5">
+				<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Fecha</span>
+				<Input type="date" bind:value={obtainedAt} required />
+			</label>
+			{#if !editingDegree}
+				<label class="grid gap-1.5">
+					<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Tipo</span>
+					<Select
+						bind:value={kind}
+						items={[
+							{ value: "base", label: "Título Profesional" },
+							{ value: "advanced", label: "Grado Académico" },
+						]}
+					/>
+				</label>
+			{/if}
+		</div>
+		<label class="grid gap-1.5">
+			<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">País</span>
+			<Select items={countryItems} bind:value={countryCode} placeholder="Seleccionar país..." />
+		</label>
+		<div class="mt-2 flex justify-end gap-2">
+			<Button variant="secondary" type="button" onclick={() => (showDialog = false)}
+				>Cancelar</Button
+			>
+			<Button
+				type="submit"
+				disabled={createDeg.isPending ||
+					updateDeg.isPending ||
+					!name ||
+					!university ||
+					!obtainedAt ||
+					!countryCode}
+			>
+				{createDeg.isPending || updateDeg.isPending ? "Guardando..." : "Guardar"}
+			</Button>
+		</div>
+	</form>
+</Dialog>

@@ -28,10 +28,7 @@
 </script>
 
 <div>
-	<h1 class="text-lg font-semibold text-[#1A1A1A]">Administración</h1>
-	<p class="mt-1 text-sm text-corp-gray">Panel de gestión del sistema.</p>
-
-	<div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 		<a
 			href="/admin/categories"
 			class="rounded-xl border border-corp-gray/20 bg-white p-5 transition-colors hover:border-corp-blue/30"

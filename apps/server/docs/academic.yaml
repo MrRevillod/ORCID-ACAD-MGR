@@ -304,6 +304,52 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+    patch:
+      tags:
+        - Grados Académicos
+      summary: Actualizar grado académico
+      description: >
+        Actualiza uno o más campos de un grado académico existente.
+        Solo se actualizan los campos proporcionados en el cuerpo
+        de la solicitud (PATCH parcial).
+      operationId: updateDegree
+      parameters:
+        - name: id
+          in: path
+          description: UUID del grado académico
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: d4e5f6a7-b8c9-0123-def4-567890123456
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDegreeDto"
+      responses:
+        "200":
+          description: Grado actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Degree"
+        "400":
+          description: Error de validación en los datos de entrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Grado no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      security:
+        - CookieAuth: []
+
   # ============================================================================
   # ACADEMICS
   # ============================================================================
@@ -718,6 +764,38 @@ components:
           maxLength: 2
           example: CL
 
+    UpdateDegreeDto:
+      description: >
+        Datos de entrada para actualizar parcialmente un grado académico.
+        Todos los campos son opcionales; solo se actualizan los
+        campos proporcionados. El tipo de grado (kind) no es modificable
+        después de la creación.
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nombre del grado
+          minLength: 1
+          maxLength: 255
+          example: Magíster en Ciencias
+        university:
+          type: string
+          description: Universidad que otorga el grado
+          minLength: 1
+          maxLength: 255
+          example: Universidad Católica de Temuco
+        obtainedAt:
+          type: string
+          format: date
+          description: Fecha de obtención
+          example: "2020-06-30"
+        countryCode:
+          type: string
+          description: Código ISO 3166-1 alpha-2 del país
+          minLength: 2
+          maxLength: 2
+          example: CL
+
     # ==========================================================================
     # ACADEMIC VIEW
     # ==========================================================================
@@ -819,7 +897,7 @@ components:
           type: number
           format: double
           nullable: true
-          description: Horas semanales dedicadas a la categoría académica
+          description: Horas dedicadas a la categoría académica
           example: 40.0
         annualDiscountHours:
           type: number

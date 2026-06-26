@@ -67,7 +67,7 @@
 		<div class="rounded-xl border border-corp-gray/20 bg-white">
 			<table class="w-full text-sm">
 				<thead>
-					<tr class="border-b border-corp-gray/10">
+					<tr class="border-b border-corp-gray/10 bg-gray-100">
 						<th
 							class="px-4 py-3 text-left text-xs font-medium tracking-wide uppercase text-corp-gray"
 							>Nombre</th
@@ -81,7 +81,7 @@
 				</thead>
 				<tbody>
 					{#each query.data ?? [] as cat (cat.id)}
-						<tr class="border-b border-corp-gray/10 last:border-0">
+						<tr class="border-b border-corp-gray/10 even:bg-gray-50 last:border-0">
 							<td class="px-4 py-3 text-[#1A1A1A]">{cat.name}</td>
 							<td class="px-4 py-3">
 								<Badge variant={cat.planta === "permanente" ? "base" : "advanced"}>

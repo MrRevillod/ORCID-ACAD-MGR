@@ -48,3 +48,7 @@ format = "dev"
 time-style = "none"
 time-pattern = "%H:%M:%S"
 with-fields = []
+
+[seeder]
+admin_email = "${SEED_ADMIN_EMAIL}"
+admin_password_hash = "${SEED_ADMIN_PASSWORD_HASH}"

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { createQuery } from "@tanstack/svelte-query"
+	import { page } from "$app/stores"
 	import { goto } from "$app/navigation"
 	import { resolve } from "$app/paths"
 	import { Search, Loader2, AlertCircle, RotateCcw } from "@lucide/svelte"
@@ -30,22 +31,55 @@
 		queryFn: () => categoriesService.list(),
 	}))
 
-	let searchInput = $state("")
-	let debouncedSearch = $state("")
-	let deptFilter = $state("")
-	let careerFilter = $state("")
-	let catFilter = $state("")
-	let plantaFilter = $state("")
-	let optionFilter = $state("")
+	let searchInput = $state($page.url.searchParams.get("search") ?? "")
+	let deptFilter = $state($page.url.searchParams.get("department_id") ?? "")
+	let careerFilter = $state($page.url.searchParams.get("career_id") ?? "")
+	let catFilter = $state($page.url.searchParams.get("category_id") ?? "")
+	let plantaFilter = $state($page.url.searchParams.get("planta") ?? "")
+	let optionFilter = $state($page.url.searchParams.get("option") ?? "")
+
+	$effect(() => {
+		const sp = $page.url.searchParams
+		searchInput = sp.get("search") ?? ""
+		deptFilter = sp.get("department_id") ?? ""
+		careerFilter = sp.get("career_id") ?? ""
+		catFilter = sp.get("category_id") ?? ""
+		plantaFilter = sp.get("planta") ?? ""
+		optionFilter = sp.get("option") ?? ""
+	})
 
 	$effect(() => {
 		const value = searchInput
-		const timer = setTimeout(() => (debouncedSearch = value), 300)
+		const timer = setTimeout(() => {
+			const url = new URL($page.url)
+			if (value) url.searchParams.set("search", value)
+			else url.searchParams.delete("search")
+			if (url.href !== $page.url.href) {
+				void goto(url, { replaceState: true, noScroll: true })
+			}
+		}, 300)
 		return () => clearTimeout(timer)
 	})
 
+	$effect(() => {
+		const url = new URL($page.url)
+		if (deptFilter) url.searchParams.set("department_id", deptFilter)
+		else url.searchParams.delete("department_id")
+		if (careerFilter) url.searchParams.set("career_id", careerFilter)
+		else url.searchParams.delete("career_id")
+		if (catFilter) url.searchParams.set("category_id", catFilter)
+		else url.searchParams.delete("category_id")
+		if (plantaFilter) url.searchParams.set("planta", plantaFilter)
+		else url.searchParams.delete("planta")
+		if (optionFilter) url.searchParams.set("option", optionFilter)
+		else url.searchParams.delete("option")
+		if (url.href !== $page.url.href) {
+			void goto(url, { replaceState: true, noScroll: true })
+		}
+	})
+
 	let filters = $derived<GetAcademicsParams>({
-		...(debouncedSearch && { search: debouncedSearch }),
+		...(searchInput && { search: searchInput }),
 		...(deptFilter && { department_id: deptFilter }),
 		...(careerFilter && { career_id: careerFilter }),
 		...(catFilter && { category_id: catFilter }),
@@ -54,13 +88,7 @@
 	})
 
 	function clearFilters() {
-		searchInput = ""
-		debouncedSearch = ""
-		deptFilter = ""
-		careerFilter = ""
-		catFilter = ""
-		plantaFilter = ""
-		optionFilter = ""
+		void goto(resolve("/academics"), { replaceState: true, noScroll: true })
 	}
 
 	const query = createQuery(() => ({
@@ -140,7 +168,9 @@
 
 <div class="mx-auto flex h-full max-w-[1600px] flex-col px-4 py-8 sm:px-6 lg:px-8">
 	<div class="flex min-h-0 flex-1 gap-8">
-		<aside class="hidden w-72 shrink-0 overflow-y-auto rounded-xl bg-white p-4 lg:block">
+		<aside
+			class="hidden w-72 shrink-0 overflow-y-auto rounded-xl border border-corp-gray/20 bg-white p-4 lg:block"
+		>
 			<h1 class="text-lg font-semibold text-[#1A1A1A]">Académicos</h1>
 			<p class="mt-1 text-sm text-corp-gray">Facultad de Ingeniería</p>
 

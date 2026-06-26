@@ -9,9 +9,9 @@
 	import { LogIn, Eye, EyeOff } from "@lucide/svelte"
 	import { authService } from "$lib/auth/auth.service"
 	import { authStore } from "$lib/auth/auth.store.svelte"
-	import { ApiResponse } from "$lib/shared/http/response"
+	import type { ApiResponse } from "$lib/shared/http/response"
 
-	let username = $state("")
+	let email = $state("")
 	let password = $state("")
 	let showPassword = $state(false)
 	let errors = $state<Record<string, string>>({})
@@ -23,8 +23,8 @@
 			password = ""
 			await goto(resolve("/"))
 		},
-		onError: (error) => {
-			toast.error(error instanceof ApiResponse ? error.message : "Ocurrió un error inesperado.")
+		onError: (error: ApiResponse) => {
+			toast.error(error.message ?? "Error al iniciar sesión")
 		},
 	}))
 
@@ -34,7 +34,7 @@
 		event.preventDefault()
 		errors = {}
 
-		const result = v.safeParse(loginSchema, { username, password })
+		const result = v.safeParse(loginSchema, { email, password })
 
 		if (!result.success) {
 			const flat = v.flatten(result.issues)
@@ -61,20 +61,22 @@
 
 		<form class="grid gap-5" onsubmit={handleSubmit}>
 			<label class="grid gap-1.5">
-				<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Usuario</span>
+				<span class="text-xs font-medium tracking-wide uppercase text-corp-gray"
+					>Correo electrónico</span
+				>
 				<div class="relative">
 					<input
-						class="h-10 w-full rounded-lg border bg-white px-3 text-sm text-[#1A1A1A] outline-none transition-colors placeholder:text-corp-gray/50 focus:border-corp-blue/50 focus:ring-2 focus:ring-corp-blue/10 {errors.username
+						class="h-10 w-full rounded-lg border bg-white px-3 text-sm text-[#1A1A1A] outline-none transition-colors placeholder:text-corp-gray/50 focus:border-corp-blue/50 focus:ring-2 focus:ring-corp-blue/10 {errors.email
 							? 'border-red-500'
 							: 'border-corp-gray/20'}"
 						type="text"
-						bind:value={username}
-						autocomplete="username"
-						placeholder="nombre.usuario"
+						bind:value={email}
+						autocomplete="email"
+						placeholder="jdoe@domain.com"
 					/>
 				</div>
-				{#if errors.username}
-					<p class="text-xs text-red-600">{errors.username}</p>
+				{#if errors.email}
+					<p class="text-xs text-red-600">{errors.email}</p>
 				{/if}
 			</label>
 

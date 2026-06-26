@@ -1,5 +1,5 @@
-use crate::academic::AcademicId;
 use crate::academic::degrees::Degree;
+use crate::academic::{AcademicId, DegreeId};
 use crate::shared::{AppResult, Database, Tx};
 
 use std::sync::Arc;
@@ -23,10 +23,25 @@ impl DegreesRepository {
         Ok(items)
     }
 
+    pub async fn find_by_id(&self, degree_id: &DegreeId) -> AppResult<Option<Degree>> {
+        let item = sqlx::query_as::<_, Degree>("SELECT * FROM degrees WHERE id = $1")
+            .bind(degree_id)
+            .fetch_optional(self.database.pool())
+            .await?;
+
+        Ok(item)
+    }
+
     pub async fn save(&self, degree: &Degree) -> AppResult<()> {
         sqlx::query(
             "INSERT INTO degrees (id, academic_id, name, university, obtained_at, kind, country_code)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)",
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             ON CONFLICT (id) DO UPDATE SET
+			    degree.name = EXCLUDED.name,
+			    degree.university = EXCLUDED.university,
+				degree.obtained_at = EXCLUDED.obtained_at,
+				degree.country_code = EXCLUDED.country_code
+			"
         )
         .bind(degree.id)
         .bind(degree.academic_id)

@@ -1,6 +1,12 @@
 export class DateValue {
 	private constructor(private readonly value?: string) {}
 
+	private parsed(): Date | null {
+		if (!this.value) return null
+		const d = new Date(this.value)
+		return Number.isNaN(d.getTime()) ? null : d
+	}
+
 	static from(value?: string | null): DateValue | null {
 		if (typeof value !== "string") return null
 		return new DateValue(value)
@@ -15,18 +21,28 @@ export class DateValue {
 		return date.toDisplay(timeStyle)
 	}
 
-	toDisplay(timeStyle: Intl.DateTimeFormatOptions["timeStyle"] = "short"): string {
-		if (!this.value) return "Fecha no disponible"
-		const parsed = new Date(this.value)
+	static formatDate(value?: string | null): string {
+		const date = DateValue.from(value)
+		if (!date) return "--"
+		return date.toDisplayDate()
+	}
 
-		if (Number.isNaN(parsed.getTime())) {
-			console.warn("[banks] invalid createdAt", { value: this.value })
-			return "Fecha no disponible"
-		}
+	toDisplay(timeStyle: Intl.DateTimeFormatOptions["timeStyle"] = "short"): string {
+		const d = this.parsed()
+		if (!d) return "--"
 
 		return new Intl.DateTimeFormat("es-CL", {
 			dateStyle: "medium",
 			timeStyle,
-		}).format(parsed)
+		}).format(d)
+	}
+
+	toDisplayDate(): string {
+		const d = this.parsed()
+		if (!d) return "--"
+
+		const day = String(d.getDate()).padStart(2, "0")
+		const month = String(d.getMonth() + 1).padStart(2, "0")
+		return `${day}-${month}-${d.getFullYear()}`
 	}
 }

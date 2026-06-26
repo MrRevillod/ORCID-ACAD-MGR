@@ -2,7 +2,7 @@ use crate::academic::*;
 use crate::shared::{AppError, AppResult, TransactionManager, Tx};
 use crate::university::*;
 
-use chrono::{NaiveDate, Utc};
+use chrono::NaiveDate;
 use std::path::PathBuf;
 use std::sync::Arc;
 use sword::prelude::*;
@@ -220,6 +220,7 @@ impl ImportsService {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn save_degree(
         &self,
         tx: &mut Tx<'_>,
@@ -230,24 +231,28 @@ impl ImportsService {
         country_code: Option<&str>,
         kind: DegreeKind,
     ) -> AppResult<()> {
-        let name = name.as_deref().unwrap_or("Desconocido").trim();
+        let name = name.as_deref().map(|s| s.trim()).unwrap_or("");
         if name.is_empty() {
             return Ok(());
         }
 
-        let university = university
-            .as_deref()
-            .unwrap_or("Desconocida")
-            .trim()
-            .to_string();
+        let university = university.as_deref().map(|s| s.trim()).unwrap_or("");
+        if university.is_empty() {
+            return Ok(());
+        }
 
-        let obtained_at = obtained_at.unwrap_or_else(|| Utc::now().date_naive());
-        let country_code = country_code.unwrap_or("CL");
+        let Some(obtained_at) = obtained_at else {
+            return Ok(());
+        };
+
+        let Some(country_code) = country_code.filter(|c| !c.trim().is_empty()) else {
+            return Ok(());
+        };
 
         let degree = Degree::builder()
             .academic_id(*academic_id)
             .name(name.to_string())
-            .university(university)
+            .university(university.to_string())
             .obtained_at(obtained_at)
             .kind(kind)
             .country_code(country_code.to_string())
