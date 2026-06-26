@@ -31,7 +31,6 @@ clean:
 
 clean-db:
 	docker exec orcid-acad-mgr-postgres psql -U user -d database -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-	cd $(SERVER) && sqlx migrate run --source ./config/migrations --database-url $(LOCAL_POSTGRES_DATABASE_URL)
 
 db:
 	docker exec -it orcid-acad-mgr-postgres /bin/bash -c "psql -U user -d database"

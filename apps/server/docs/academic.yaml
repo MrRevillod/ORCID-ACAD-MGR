@@ -11,10 +11,6 @@ info:
       - **Opciones de Categoría** (`/category-options`)
       - **Grados Académicos** (`/degrees`)
       - **Académicos** (`/academics`)
-
-    La vista detallada de académicos (`AcademicView`) resuelve automáticamente
-    las relaciones entre tablas en nombres legibles (departamento, carrera, categoría,
-    opción, planta, nacionalidad, puesto de trabajo).
   version: "0.1.0"
 
 servers:
