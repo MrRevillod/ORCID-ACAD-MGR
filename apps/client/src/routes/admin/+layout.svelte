@@ -14,9 +14,9 @@
 	] as const
 </script>
 
-<div class="mx-auto flex max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-	<aside class="hidden w-56 shrink-0 lg:block">
-		<nav class="sticky top-20 space-y-1">
+<div class="mx-auto flex h-full max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
+	<aside class="hidden w-56 shrink-0 rounded-xl bg-white lg:block">
+		<nav class="space-y-1">
 			{#each navItems as item (item.href)}
 				<a
 					href={item.href}
@@ -32,7 +32,7 @@
 		</nav>
 	</aside>
 
-	<div class="min-w-0 flex-1 lg:ml-8">
+	<div class="min-w-0 flex-1 overflow-y-auto lg:ml-8">
 		{@render children()}
 	</div>
 </div>

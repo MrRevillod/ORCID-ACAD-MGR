@@ -98,7 +98,7 @@ pub struct AcademicImportRowDto {
     #[serde(rename = "CIUDAD")]
     pub city: String,
 
-    #[serde(rename = "TITULO")]
+    #[serde(rename = "TITULO PROFESIONAL")]
     #[serde(default)]
     pub degree_1_name: Option<String>,
 

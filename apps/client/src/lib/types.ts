@@ -42,6 +42,18 @@ export interface AcademicView {
 	city: string
 }
 
+export interface Department {
+	id: string
+	name: string
+	facultyId: string
+}
+
+export interface Career {
+	id: string
+	name: string
+	departmentId: string
+}
+
 export interface AcademicCategory {
 	id: string
 	name: string

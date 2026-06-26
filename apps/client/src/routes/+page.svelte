@@ -3,9 +3,7 @@
 	import { authStore } from "$lib/auth/auth.store.svelte"
 </script>
 
-<div
-	class="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-7xl items-center justify-center px-4 sm:px-6 lg:px-8"
->
+<div class="mx-auto flex h-full max-w-[1600px] items-center justify-center px-4 sm:px-6 lg:px-8">
 	<div class="max-w-xl text-center">
 		<div
 			class="mb-6 inline-flex items-center gap-2 rounded-full border border-corp-blue/10 bg-corp-blue/4 px-4 py-1.5"

@@ -38,7 +38,7 @@
 		onRowClick,
 		search = $bindable(""),
 		searchFields = [] as string[],
-		pageSize = 10,
+		pageSize = 15,
 		class: className = "",
 	}: DataTableProps<TData> = $props()
 
@@ -88,7 +88,7 @@
 	<table class="w-full caption-bottom text-sm">
 		<thead>
 			{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
-				<tr class="border-b border-corp-gray/10">
+				<tr class="border-b border-corp-gray/20 bg-gray-100">
 					{#each headerGroup.headers as header (header.id)}
 						<th
 							class="px-4 py-3 text-left text-xs font-medium tracking-wide uppercase text-corp-gray {header.column.getCanSort()
@@ -113,7 +113,7 @@
 		<tbody>
 			{#each table.getRowModel().rows as row (row.id)}
 				<tr
-					class="border-b border-corp-gray/10 transition-colors last:border-0 {onRowClick
+					class="border-b border-corp-gray/10 transition-colors last:border-0 even:bg-gray-50 {onRowClick
 						? 'cursor-pointer hover:bg-corp-blue/4'
 						: ''}"
 					role={onRowClick ? "button" : undefined}

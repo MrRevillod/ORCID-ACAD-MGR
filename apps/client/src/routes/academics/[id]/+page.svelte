@@ -32,7 +32,12 @@
 	}))
 
 	const academic = $derived(academicQuery.data)
-	const degrees = $derived(degreesQuery.data ?? [])
+	const degrees = $derived(
+		(degreesQuery.data ?? []).sort((a, b) => {
+			if (a.kind === b.kind) return 0
+			return a.kind === "base" ? -1 : 1
+		}),
+	)
 
 	const fullName = $derived(
 		academic ? `${academic.names} ${academic.paternalSurname} ${academic.maternalSurname}` : "",
@@ -77,13 +82,13 @@
 	}
 </script>
 
-<div class="min-h-screen bg-white">
+<div class="h-full overflow-y-auto">
 	{#if academicQuery.isPending}
-		<div class="flex items-center justify-center py-24">
+		<div class="flex h-full items-center justify-center">
 			<Loader2 class="size-6 animate-spin text-corp-gray" />
 		</div>
 	{:else if academicQuery.isError || !academic}
-		<div class="flex flex-col items-center justify-center py-24 text-center">
+		<div class="flex h-full flex-col items-center justify-center text-center">
 			<AlertCircle class="size-8 text-red-500" />
 			<p class="mt-3 text-sm text-corp-gray">Académico no encontrado.</p>
 			<a href="/academics" class="mt-4 text-sm font-medium text-corp-blue hover:underline"
@@ -91,18 +96,15 @@
 			>
 		</div>
 	{:else}
-		<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-			<a
-				href="/academics"
-				class="mb-6 inline-flex items-center gap-1 text-sm font-medium text-corp-gray transition-colors hover:text-corp-blue"
-			>
-				<ChevronLeft class="size-4" />
-				Volver
-			</a>
-
+		<div class="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
 			<div class="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
-				<!-- Sidebar -->
-				<aside class="overflow-hidden rounded-xl bg-corp-blue text-white">
+				<aside class="relative overflow-hidden rounded-xl bg-corp-blue text-white">
+					<a
+						href="/academics"
+						class="absolute left-3 top-3 z-10 flex size-8 items-center justify-center rounded-full bg-white text-corp-blue shadow-sm active:scale-95"
+					>
+						<ChevronLeft class="size-4" />
+					</a>
 					<div class="p-6 pb-4 text-center">
 						<div
 							class="mx-auto mb-4 flex size-24 items-center justify-center rounded-full bg-white/10 text-2xl font-bold tracking-widest text-white ring-2 ring-white/15"
@@ -139,8 +141,7 @@
 					</div>
 				</aside>
 
-				<!-- Main -->
-				<main class="space-y-6">
+				<div class="space-y-6">
 					<section class="rounded-xl border border-corp-gray/20 bg-white p-6">
 						<div
 							class="mb-5 flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-corp-blue"
@@ -246,7 +247,7 @@
 										<div class="min-w-0 flex-1">
 											<div class="mb-1 flex items-center gap-2">
 												<Badge variant={deg.kind === "base" ? "base" : "advanced"}>
-													{deg.kind === "base" ? "BASE" : "AVANZADO"}
+													{deg.kind === "base" ? "Título Profesional" : "Grado Académico"}
 												</Badge>
 											</div>
 											<p class="text-[15px] font-medium text-[#1a1a1a]">{deg.name}</p>
@@ -265,7 +266,7 @@
 							<p class="text-sm text-corp-gray">No se registran grados académicos.</p>
 						{/if}
 					</section>
-				</main>
+				</div>
 			</div>
 		</div>
 	{/if}

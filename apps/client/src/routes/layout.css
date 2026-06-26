@@ -40,6 +40,12 @@
 	--font-family-sans: "Vista Sans", system-ui, sans-serif;
 }
 
+html,
+body {
+	height: 100dvh;
+	overflow: hidden;
+}
+
 body {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;

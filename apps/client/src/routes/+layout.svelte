@@ -17,7 +17,7 @@
 
 <QueryClientProvider client={queryClient}>
 	<Header />
-	<main class="min-h-[calc(100dvh-3.5rem)]">
+	<main class="h-[calc(100dvh-3.5rem)] overflow-hidden bg-neutral-50">
 		{@render children()}
 	</main>
 	<Toaster richColors position="top-right" />

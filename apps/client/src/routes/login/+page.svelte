@@ -50,11 +50,13 @@
 	}
 </script>
 
-<main class="flex min-h-[calc(100dvh-3.5rem)] items-center justify-center px-4 py-8">
-	<section class="w-full max-w-sm">
+<div class="flex h-full items-center justify-center px-4 py-8">
+	<section class="w-full max-w-sm rounded-xl bg-white p-6">
 		<div class="mb-8 text-center">
 			<h1 class="text-lg font-semibold text-[#1A1A1A]">Iniciar sesión</h1>
-			<p class="mt-1 text-sm text-corp-gray">Usa tus credenciales Pillan/LDAP para ingresar.</p>
+			<p class="mt-1 text-sm text-corp-gray">
+				Ingresa a la web de Administración de la Plataforma.
+			</p>
 		</div>
 
 		<form class="grid gap-5" onsubmit={handleSubmit}>
@@ -127,4 +129,4 @@
 			</a>
 		</p>
 	</section>
-</main>
+</div>

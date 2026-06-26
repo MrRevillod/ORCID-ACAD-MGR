@@ -202,6 +202,7 @@ impl ImportsService {
             &input.degree_1_university,
             input.degree_1_date,
             degree_1_country_code,
+            DegreeKind::Base,
         )
         .await?;
 
@@ -212,6 +213,7 @@ impl ImportsService {
             &input.degree_2_university,
             input.degree_2_date,
             degree_2_country_code,
+            DegreeKind::Advanced,
         )
         .await?;
 
@@ -226,6 +228,7 @@ impl ImportsService {
         university: &Option<String>,
         obtained_at: Option<NaiveDate>,
         country_code: Option<&str>,
+        kind: DegreeKind,
     ) -> AppResult<()> {
         let name = name.as_deref().unwrap_or("Desconocido").trim();
         if name.is_empty() {
@@ -246,7 +249,7 @@ impl ImportsService {
             .name(name.to_string())
             .university(university)
             .obtained_at(obtained_at)
-            .kind(DegreeKind::Base)
+            .kind(kind)
             .country_code(country_code.to_string())
             .build();
 
