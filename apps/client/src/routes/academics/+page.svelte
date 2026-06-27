@@ -1,46 +1,47 @@
 <script lang="ts">
 	import { createQuery } from "@tanstack/svelte-query"
-	import { page } from "$app/stores"
+	import { page } from "$app/state"
 	import { goto } from "$app/navigation"
 	import { resolve } from "$app/paths"
-	import { Search, Loader2, AlertCircle, RotateCcw } from "@lucide/svelte"
+	import { Loader2, AlertCircle } from "@lucide/svelte"
 	import { createColumnHelper, type TableFeatures } from "@tanstack/svelte-table"
-	import { academicsService, type GetAcademicsParams } from "$lib/services/academics.service"
-	import { departmentsService } from "$lib/services/departments.service"
-	import { careersService } from "$lib/services/careers.service"
-	import { categoriesService } from "$lib/services/categories.service"
-	import DataTable from "$lib/components/ui/data-table.svelte"
-	import Select from "$lib/components/ui/select.svelte"
-	import Label from "$lib/components/ui/label.svelte"
-	import Button from "$lib/components/ui/button.svelte"
-	import type { AcademicView } from "$lib/types"
-	import { formatName } from "$lib/shared/name"
+	import { academicService } from "$lib/academic/academics/service"
+	import { departmentService } from "$lib/university/departments/service"
+	import { careerService } from "$lib/university/careers/service"
+	import { categoryService } from "$lib/academic/categories/service"
+	import DataTable from "$lib/shared/components/ui/data-table.svelte"
+	import AcademicsFilters from "$lib/academic/academics/components/academics-filters.svelte"
+	import AcademicCreateDialog from "$lib/academic/academics/components/academic-create-dialog.svelte"
+	import type { Academic, GetAcademicsParams } from "$lib/academic/academics/dtos"
+	import { PLANTA_LABELS, ACADEMIC_OPTION_LABELS } from "$lib/academic/academics/enums"
+	import { FullName } from "$lib/shared/value-objects/full-name.value"
+
+	let searchInput = $state(page.url.searchParams.get("search") ?? "")
+	let deptFilter = $state(page.url.searchParams.get("department_id") ?? "")
+	let careerFilter = $state(page.url.searchParams.get("career_id") ?? "")
+	let catFilter = $state(page.url.searchParams.get("category_id") ?? "")
+	let plantaFilter = $state(page.url.searchParams.get("planta") ?? "")
+	let optionFilter = $state(page.url.searchParams.get("option") ?? "")
 
 	const departmentsQuery = createQuery(() => ({
 		queryKey: ["departments"],
-		queryFn: () => departmentsService.list(),
+		queryFn: () => departmentService.list(),
 	}))
 
 	const careersQuery = createQuery(() => ({
-		queryKey: ["careers"],
-		queryFn: () => careersService.list(),
+		queryKey: ["careers", deptFilter],
+		queryFn: () => careerService.list(deptFilter ? { department_id: deptFilter } : undefined),
 	}))
 
 	const categoriesQuery = createQuery(() => ({
 		queryKey: ["categories"],
-		queryFn: () => categoriesService.list(),
+		queryFn: () => categoryService.list(),
 	}))
 
-	let searchInput = $state($page.url.searchParams.get("search") ?? "")
-	let deptFilter = $state($page.url.searchParams.get("department_id") ?? "")
-	let careerFilter = $state($page.url.searchParams.get("career_id") ?? "")
-	let catFilter = $state($page.url.searchParams.get("category_id") ?? "")
-	let plantaFilter = $state($page.url.searchParams.get("planta") ?? "")
-	let optionFilter = $state($page.url.searchParams.get("option") ?? "")
-
 	$effect(() => {
-		const sp = $page.url.searchParams
-		searchInput = sp.get("search") ?? ""
+		const sp = page.url.searchParams
+		const urlSearch = sp.get("search") ?? ""
+		if (urlSearch !== searchInput) searchInput = urlSearch
 		deptFilter = sp.get("department_id") ?? ""
 		careerFilter = sp.get("career_id") ?? ""
 		catFilter = sp.get("category_id") ?? ""
@@ -51,10 +52,10 @@
 	$effect(() => {
 		const value = searchInput
 		const timer = setTimeout(() => {
-			const url = new URL($page.url)
+			const url = new URL(page.url)
 			if (value) url.searchParams.set("search", value)
 			else url.searchParams.delete("search")
-			if (url.href !== $page.url.href) {
+			if (url.href !== page.url.href) {
 				void goto(url, { replaceState: true, noScroll: true })
 			}
 		}, 300)
@@ -62,7 +63,7 @@
 	})
 
 	$effect(() => {
-		const url = new URL($page.url)
+		const url = new URL(page.url)
 		if (deptFilter) url.searchParams.set("department_id", deptFilter)
 		else url.searchParams.delete("department_id")
 		if (careerFilter) url.searchParams.set("career_id", careerFilter)
@@ -73,7 +74,7 @@
 		else url.searchParams.delete("planta")
 		if (optionFilter) url.searchParams.set("option", optionFilter)
 		else url.searchParams.delete("option")
-		if (url.href !== $page.url.href) {
+		if (url.href !== page.url.href) {
 			void goto(url, { replaceState: true, noScroll: true })
 		}
 	})
@@ -87,131 +88,56 @@
 		...(optionFilter && { option: optionFilter as GetAcademicsParams["option"] }),
 	})
 
+	let showCreateDialog = $state(false)
+
 	function clearFilters() {
 		void goto(resolve("/academics"), { replaceState: true, noScroll: true })
 	}
 
 	const query = createQuery(() => ({
 		queryKey: ["academics", filters],
-		queryFn: () => academicsService.list(filters),
+		queryFn: () => academicService.list(filters),
 	}))
 
-	const deptItems = $derived([
-		{ value: "", label: "Todos" },
-		...(departmentsQuery.data?.map((d) => ({ value: d.id, label: d.name })) ?? []),
-	])
-
-	const careerItems = $derived([
-		{ value: "", label: "Todas" },
-		...(careersQuery.data ?? [])
-			.filter((c) => !deptFilter || c.departmentId === deptFilter)
-			.map((c) => ({ value: c.id, label: c.name })),
-	])
-
-	const catItems = $derived([
-		{ value: "", label: "Todas" },
-		...(categoriesQuery.data?.map((c) => ({ value: c.id, label: c.name })) ?? []),
-	])
-
-	const plantaItems = [
-		{ value: "", label: "Todas" },
-		{ value: "adjunta", label: "Adjunta" },
-		{ value: "permanente", label: "Permanente" },
-	]
-
-	const optionItems = [
-		{ value: "", label: "Todas" },
-		{ value: "teaching", label: "Docencia" },
-		{ value: "research", label: "Investigación" },
-	]
-
-	const helper = createColumnHelper<TableFeatures, AcademicView>()
+	const helper = createColumnHelper<TableFeatures, Academic>()
 
 	const columns = [
-		helper.accessor((row) => formatName(row.names, row.paternalSurname, row.maternalSurname), {
-			id: "name",
-			header: "Nombre",
-		}),
+		helper.accessor(
+			(row) => FullName.of(row.names, row.paternalSurname, row.maternalSurname).format(),
+			{
+				id: "name",
+				header: "Nombre",
+			},
+		),
 		helper.accessor("email", { header: "Email" }),
 		helper.accessor("department", { header: "Departamento" }),
 		helper.accessor("category", { header: "Categoría" }),
-		helper.accessor(
-			(row) => {
-				switch (row.planta) {
-					case "adjunta":
-						return "Adjunta"
-					case "permanente":
-						return "Permanente"
-				}
-			},
-			{
-				id: "planta",
-				header: "Planta",
-			},
-		),
-		helper.accessor(
-			(row) => {
-				switch (row.option) {
-					case "teaching":
-						return "Docencia"
-					case "research":
-						return "Investigación"
-				}
-			},
-			{
-				id: "option",
-				header: "Opción",
-			},
-		),
+		helper.accessor((row) => PLANTA_LABELS[row.planta], {
+			id: "planta",
+			header: "Planta",
+		}),
+		helper.accessor((row) => ACADEMIC_OPTION_LABELS[row.option], {
+			id: "option",
+			header: "Opción",
+		}),
 	]
 </script>
 
 <div class="mx-auto flex h-full max-w-[1600px] flex-col px-4 py-8 sm:px-6 lg:px-8">
 	<div class="flex min-h-0 flex-1 gap-8">
-		<aside
-			class="hidden w-72 shrink-0 overflow-y-auto rounded-xl border border-corp-gray/20 bg-white p-4 lg:block"
-		>
-			<h1 class="text-lg font-semibold text-[#1A1A1A]">Académicos</h1>
-			<p class="mt-1 text-sm text-corp-gray">Facultad de Ingeniería</p>
-
-			<div class="relative mt-6">
-				<Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-corp-gray/50" />
-				<input
-					type="text"
-					bind:value={searchInput}
-					placeholder="Buscar académico..."
-					class="h-10 w-full rounded-lg border border-corp-gray/20 bg-white pl-10 pr-3 text-sm text-[#1A1A1A] outline-none transition-colors placeholder:text-corp-gray/50 focus:border-corp-blue/50 focus:ring-2 focus:ring-corp-blue/10"
-				/>
-			</div>
-
-			<div class="mt-6 space-y-4">
-				<div class="space-y-2.5">
-					<Label>Departamento</Label>
-					<Select items={deptItems} bind:value={deptFilter} placeholder="Todos" />
-				</div>
-				<div class="space-y-2.5">
-					<Label>Carrera</Label>
-					<Select items={careerItems} bind:value={careerFilter} placeholder="Todas" />
-				</div>
-				<div class="space-y-2.5">
-					<Label>Categoría</Label>
-					<Select items={catItems} bind:value={catFilter} placeholder="Todas" />
-				</div>
-				<div class="space-y-2.5">
-					<Label>Planta</Label>
-					<Select items={plantaItems} bind:value={plantaFilter} placeholder="Todas" />
-				</div>
-				<div class="space-y-2.5">
-					<Label>Opción</Label>
-					<Select items={optionItems} bind:value={optionFilter} placeholder="Todas" />
-				</div>
-			</div>
-
-			<Button variant="secondary" class="mt-6 w-full" onclick={clearFilters}>
-				<RotateCcw class="size-4" />
-				Limpiar filtros
-			</Button>
-		</aside>
+		<AcademicsFilters
+			bind:search={searchInput}
+			bind:deptFilter
+			bind:careerFilter
+			bind:catFilter
+			bind:plantaFilter
+			bind:optionFilter
+			departments={departmentsQuery.data}
+			careers={careersQuery.data}
+			categories={categoriesQuery.data}
+			onClear={clearFilters}
+			onCreate={() => (showCreateDialog = true)}
+		/>
 
 		<main class="min-w-0 flex-1 overflow-y-auto">
 			{#if query.isPending}
@@ -227,9 +153,11 @@
 				<DataTable
 					data={query.data ?? []}
 					{columns}
-					onRowClick={(row: AcademicView) => void goto(resolve(`/academics/${row.id}`))}
+					onRowClick={(row: Academic) => void goto(resolve(`/academics/${row.id}`))}
 				/>
 			{/if}
 		</main>
 	</div>
 </div>
+
+<AcademicCreateDialog bind:open={showCreateDialog} onClose={() => (showCreateDialog = false)} />

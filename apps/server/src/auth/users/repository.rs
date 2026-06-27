@@ -66,6 +66,15 @@ impl UsersRepository {
         Ok(user)
     }
 
+    pub async fn delete(&self, id: &UserId) -> AppResult<()> {
+        sqlx::query("DELETE FROM users WHERE id = $1")
+            .bind(id)
+            .execute(self.database.pool())
+            .await?;
+
+        Ok(())
+    }
+
     pub async fn save(&self, user: &User) -> AppResult<User> {
         let user = sqlx::query_as::<_, User>(
             "INSERT INTO users (id, name, email, role, password_hash) VALUES ($1, $2, $3, $4, $5)

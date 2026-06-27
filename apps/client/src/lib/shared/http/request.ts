@@ -3,38 +3,45 @@ import { ApiResponse } from "./response"
 
 import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios"
 
-export const request = <T>(config: AxiosRequestConfig): Promise<T> =>
-	api
-		.request<unknown, AxiosResponse<unknown>>(config)
-		.then((response: AxiosResponse<unknown>) => {
-			const payload = response.data
+class HttpClient {
+	constructor() {}
 
-			if (!ApiResponse.is(payload)) {
-				throw ApiResponse.genericError(response.status, "Respuesta del servidor inválida.")
-			}
+	public async request<T>(config: AxiosRequestConfig): Promise<T> {
+		return api
+			.request<unknown, AxiosResponse<unknown>>(config)
+			.then((response: AxiosResponse<unknown>) => {
+				const payload = response.data
 
-			if (!payload.success) {
-				throw payload
-			}
+				if (!ApiResponse.is(payload)) {
+					throw ApiResponse.genericError(response.status, "Respuesta del servidor inválida.")
+				}
 
-			return (payload as ApiResponse<T>).data as T
-		})
-		.catch((error: unknown) => {
-			if (error instanceof ApiResponse) throw error
+				if (!payload.success) {
+					throw payload
+				}
 
-			const axiosError = error as AxiosError<unknown>
+				return (payload as ApiResponse<T>).data as T
+			})
+			.catch((error: unknown) => {
+				if (error instanceof ApiResponse) throw error
 
-			if (axiosError.response?.data && ApiResponse.is(axiosError.response.data)) {
-				throw axiosError.response.data
-			}
+				const axiosError = error as AxiosError<unknown>
 
-			if (axiosError.response) {
-				throw ApiResponse.genericError(axiosError.response.status, "Error del servidor.")
-			}
+				if (axiosError.response?.data && ApiResponse.is(axiosError.response.data)) {
+					throw axiosError.response.data
+				}
 
-			if (axiosError.code === "ECONNABORTED") {
-				throw ApiResponse.genericError(0, "La solicitud tardó demasiado.")
-			}
+				if (axiosError.response) {
+					throw ApiResponse.genericError(axiosError.response.status, "Error del servidor.")
+				}
 
-			throw ApiResponse.genericError(0, "Error de conexión.")
-		})
+				if (axiosError.code === "ECONNABORTED") {
+					throw ApiResponse.genericError(0, "La solicitud tardó demasiado.")
+				}
+
+				throw ApiResponse.genericError(0, "Error de conexión.")
+			})
+	}
+}
+
+export const httpClient = new HttpClient()

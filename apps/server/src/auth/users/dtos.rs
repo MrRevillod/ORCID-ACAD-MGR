@@ -71,6 +71,25 @@ pub struct UserView {
     pub role: UserRole,
 }
 
+#[derive(Debug, Validate, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateUserDto {
+    #[validate(length(
+        min = 1,
+        max = 255,
+        message = "El atributo 'name' no puede tener más de 255 caracteres"
+    ))]
+    pub name: Option<String>,
+
+    #[validate(email(message = "El atributo 'email' debe ser un correo electrónico válido"))]
+    pub email: Option<String>,
+
+    pub role: Option<UserRole>,
+
+    #[validate(custom(function = "validate_password"))]
+    pub password: Option<String>,
+}
+
 impl From<User> for UserView {
     fn from(user: User) -> Self {
         Self {

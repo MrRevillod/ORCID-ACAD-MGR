@@ -32,16 +32,10 @@ impl DegreesRepository {
         Ok(item)
     }
 
-    pub async fn save(&self, degree: &Degree) -> AppResult<()> {
+    pub async fn create(&self, degree: &Degree) -> AppResult<()> {
         sqlx::query(
             "INSERT INTO degrees (id, academic_id, name, university, obtained_at, kind, country_code)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
-             ON CONFLICT (id) DO UPDATE SET
-			    degree.name = EXCLUDED.name,
-			    degree.university = EXCLUDED.university,
-				degree.obtained_at = EXCLUDED.obtained_at,
-				degree.country_code = EXCLUDED.country_code
-			"
+             VALUES ($1, $2, $3, $4, $5, $6, $7)",
         )
         .bind(degree.id)
         .bind(degree.academic_id)
@@ -50,6 +44,23 @@ impl DegreesRepository {
         .bind(degree.obtained_at)
         .bind(&degree.kind)
         .bind(&degree.country_code)
+        .execute(self.database.pool())
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn update(&self, degree: &Degree) -> AppResult<()> {
+        sqlx::query(
+            "UPDATE degrees
+             SET name = $1, university = $2, obtained_at = $3, country_code = $4
+             WHERE id = $5",
+        )
+        .bind(&degree.name)
+        .bind(&degree.university)
+        .bind(degree.obtained_at)
+        .bind(&degree.country_code)
+        .bind(degree.id)
         .execute(self.database.pool())
         .await?;
 

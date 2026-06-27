@@ -1,36 +1,16 @@
 <script lang="ts">
-	import {
-		createQuery,
-		createMutation as createTanMutation,
-		useQueryClient,
-	} from "@tanstack/svelte-query"
-	import { positionsService } from "$lib/services/positions.service"
-	import Dialog from "$lib/components/ui/dialog.svelte"
-	import Button from "$lib/components/ui/button.svelte"
-	import Input from "$lib/components/ui/input.svelte"
+	import { createQuery } from "@tanstack/svelte-query"
+	import { positionService } from "$lib/university/work-positions/service"
+	import PositionDialog from "$lib/university/work-positions/components/position-dialog.svelte"
+	import Button from "$lib/shared/components/ui/button.svelte"
 	import { Plus, Loader2, Trash2 } from "@lucide/svelte"
-	import { toast } from "svelte-sonner"
-
-	const queryClient = useQueryClient()
 
 	const query = createQuery(() => ({
 		queryKey: ["admin", "positions"],
-		queryFn: () => positionsService.list(),
+		queryFn: () => positionService.list(),
 	}))
 
 	let showCreate = $state(false)
-	let name = $state("")
-
-	const createPos = createTanMutation(() => ({
-		mutationFn: () => positionsService.create({ name }),
-		onSuccess: () => {
-			void queryClient.invalidateQueries({ queryKey: ["admin", "positions"] })
-			toast.success("Cargo creado")
-			showCreate = false
-			name = ""
-		},
-		onError: () => toast.error("Error al crear el cargo"),
-	}))
 </script>
 
 <div>
@@ -83,25 +63,4 @@
 	{/if}
 </div>
 
-<Dialog bind:open={showCreate} title="Nuevo cargo laboral">
-	<form
-		class="grid gap-4"
-		onsubmit={(e) => {
-			e.preventDefault()
-			createPos.mutate()
-		}}
-	>
-		<label class="grid gap-1.5">
-			<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Nombre</span>
-			<Input bind:value={name} placeholder="Ej: Docente" required />
-		</label>
-		<div class="mt-2 flex justify-end gap-2">
-			<Button variant="secondary" type="button" onclick={() => (showCreate = false)}
-				>Cancelar</Button
-			>
-			<Button type="submit" disabled={createPos.isPending || !name}>
-				{createPos.isPending ? "Creando..." : "Crear"}
-			</Button>
-		</div>
-	</form>
-</Dialog>
+<PositionDialog bind:open={showCreate} onClose={() => (showCreate = false)} />

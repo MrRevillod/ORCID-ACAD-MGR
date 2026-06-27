@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { createQuery, createMutation, useQueryClient } from "@tanstack/svelte-query"
-	import { page } from "$app/stores"
+	import { createQuery } from "@tanstack/svelte-query"
+	import { page } from "$app/state"
 	import {
 		ChevronLeft,
 		MapPin,
@@ -14,38 +14,30 @@
 		Plus,
 	} from "@lucide/svelte"
 
-	import { academicsService } from "$lib/services/academics.service"
-	import { degreesService } from "$lib/services/degrees.service"
-	import Dialog from "$lib/components/ui/dialog.svelte"
-	import Input from "$lib/components/ui/input.svelte"
-	import Select from "$lib/components/ui/select.svelte"
-	import Button from "$lib/components/ui/button.svelte"
-	import Badge from "$lib/components/ui/badge.svelte"
-	import { CLf64Value } from "$lib/shared/value-objects/cl-f64.value"
-	import { DateValue } from "$lib/shared/value-objects/date.value"
-	import { CountryValue } from "$lib/shared/value-objects/country.value"
-	import { countryItems } from "$lib/shared/countries"
-	import {
-		DEGREE_KIND,
-		type Degree,
-		type DegreeKind,
-		type Sex,
-		type AcademicPlanta,
-		type AcademicOption,
-		type UpdateAcademicDto,
-	} from "$lib/types"
+	import { authStore } from "$lib/auth/auth.store.svelte"
+	import { academicService } from "$academics/service"
+	import { degreeService } from "$degrees/service"
+	import DegreeDialog from "$degrees/components/degree-dialog.svelte"
+	import AcademicEditDialog from "$academics/components/academic-edit-dialog.svelte"
+	import Badge from "$shared/components/ui/badge.svelte"
+	import { CLf64Value } from "$shared/value-objects/cl-f64.value"
+	import { DateValue } from "$shared/value-objects/date.value"
+	import { CountryValue } from "$shared/value-objects/country.value"
+	import { SEX_LABELS, PLANTA_LABELS, ACADEMIC_OPTION_LABELS } from "$academics/enums"
+	import { DEGREE_KIND } from "$degrees/enums"
+	import type { Degree } from "$degrees/dtos"
 
-	const id = $derived($page.params.id ?? "")
+	const id = $derived(page.params.id ?? "")
 
 	const academicQuery = createQuery(() => ({
 		queryKey: ["academic", id],
-		queryFn: () => academicsService.get(id),
+		queryFn: () => academicService.get(id),
 		enabled: Boolean(id),
 	}))
 
 	const degreesQuery = createQuery(() => ({
 		queryKey: ["degrees", id],
-		queryFn: () => degreesService.listByAcademic(id),
+		queryFn: () => degreeService.listByAcademic(id),
 		enabled: Boolean(id),
 	}))
 
@@ -67,162 +59,28 @@
 		academic ? (academic.names.charAt(0) + academic.paternalSurname.charAt(0)).toUpperCase() : "",
 	)
 
-	function sexLabel(s: Sex): string {
-		switch (s) {
-			case "H":
-				return "Masculino"
-			case "M":
-				return "Femenino"
-			case "O":
-				return "Otro"
-		}
-	}
-
-	function plantaLabel(p: AcademicPlanta): string {
-		switch (p) {
-			case "adjunta":
-				return "Adjunta"
-			case "permanente":
-				return "Permanente"
-		}
-	}
-
-	function optionLabel(o: AcademicOption): string {
-		switch (o) {
-			case "teaching":
-				return "Docencia"
-			case "research":
-				return "Investigación"
-		}
-	}
-
-	const queryClient = useQueryClient()
-
-	let showDialog = $state(false)
+	let showDegreeDialog = $state(false)
 	let editingDegree = $state<Degree | null>(null)
-	let name = $state("")
-	let university = $state("")
-	let obtainedAt = $state("")
-	let kind = $state<DegreeKind>("base")
-	let countryCode = $state("CL")
+	let createKind = $state<(typeof DEGREE_KIND)[number]>("base")
 
-	function openCreate(k: DegreeKind) {
+	function openCreate(k: (typeof DEGREE_KIND)[number]) {
 		editingDegree = null
-		kind = k
-		name = ""
-		university = ""
-		obtainedAt = ""
-		countryCode = "CL"
-		showDialog = true
+		createKind = k
+		showDegreeDialog = true
 	}
 
 	function openEdit(deg: Degree) {
 		editingDegree = deg
-		kind = deg.kind
-		name = deg.name
-		university = deg.university
-		obtainedAt = deg.obtainedAt
-		countryCode = deg.countryCode
-		showDialog = true
+		showDegreeDialog = true
 	}
 
-	const createDeg = createMutation(() => ({
-		mutationFn: () =>
-			degreesService.create({
-				academicId: id,
-				name,
-				university,
-				obtainedAt,
-				kind,
-				countryCode,
-			}),
-		onSuccess: () => {
-			void queryClient.invalidateQueries({ queryKey: ["degrees", id] })
-			showDialog = false
-		},
-	}))
-
-	const updateDeg = createMutation(() => ({
-		mutationFn: (degId: string) =>
-			degreesService.update(degId, {
-				name: name || undefined,
-				university: university || undefined,
-				obtainedAt: obtainedAt || undefined,
-				countryCode: countryCode || undefined,
-			}),
-		onSuccess: () => {
-			void queryClient.invalidateQueries({ queryKey: ["degrees", id] })
-			showDialog = false
-		},
-	}))
-
-	function handleSave() {
-		if (editingDegree) {
-			updateDeg.mutate(editingDegree.id)
-		} else {
-			createDeg.mutate()
-		}
-	}
+	const isAdmin = $derived(authStore.isAuthenticated())
 
 	let showEditAcademicDialog = $state(false)
-	let editNames = $state("")
-	let editPaternalSurname = $state("")
-	let editMaternalSurname = $state("")
-	let editEmail = $state("")
-	let editOrcid = $state("")
-	let editSex = $state<Sex>("H")
-	let editBirthDate = $state("")
-	let editCity = $state("")
-	let editNationalityCode = $state("CL")
-	let editJce = $state("")
-	let editAnnualDiscountHours = $state("")
 
-	function openEditAcademic() {
-		if (!academic) return
-		editNames = academic.names
-		editPaternalSurname = academic.paternalSurname
-		editMaternalSurname = academic.maternalSurname
-		editEmail = academic.email
-		editOrcid = academic.orcid ?? ""
-		editSex = academic.sex
-		editBirthDate = academic.birthDate
-		editCity = academic.city
-		const matched = countryItems.find((i) => i.label.includes(academic.nationality))
-		editNationalityCode = matched?.value ?? "CL"
-		editJce = String(academic.jce)
-		editAnnualDiscountHours = String(academic.annualDiscountHours)
-		showEditAcademicDialog = true
+	function closeEditAcademic() {
+		showEditAcademicDialog = false
 	}
-
-	const updateAcademic = createMutation(() => ({
-		mutationFn: () => {
-			const payload: UpdateAcademicDto = {}
-			if (editNames !== academic?.names) payload.names = editNames
-			if (editPaternalSurname !== academic?.paternalSurname)
-				payload.paternalSurname = editPaternalSurname
-			if (editMaternalSurname !== academic?.maternalSurname)
-				payload.maternalSurname = editMaternalSurname
-			if (editEmail !== academic?.email) payload.email = editEmail
-			if (editOrcid !== (academic?.orcid ?? "")) payload.orcid = editOrcid || null
-			if (editSex !== academic?.sex) payload.sex = editSex
-			if (editBirthDate !== academic?.birthDate) payload.birthDate = editBirthDate
-			if (editCity !== academic?.city) payload.city = editCity
-			const currentNatCode =
-				countryItems.find((i) => i.label.includes(academic?.nationality ?? ""))?.value ?? "CL"
-			if (editNationalityCode !== currentNatCode) payload.nationalityCode = editNationalityCode
-			if (+editJce !== academic?.jce && editJce !== "") payload.jce = +editJce
-			if (
-				+editAnnualDiscountHours !== academic?.annualDiscountHours &&
-				editAnnualDiscountHours !== ""
-			)
-				payload.annualDiscountHours = +editAnnualDiscountHours
-			return academicsService.update(id, payload)
-		},
-		onSuccess: () => {
-			void queryClient.invalidateQueries({ queryKey: ["academic", id] })
-			showEditAcademicDialog = false
-		},
-	}))
 </script>
 
 <div class="h-full overflow-y-auto">
@@ -248,12 +106,14 @@
 					>
 						<ChevronLeft class="size-4" />
 					</a>
-					<button
-						class="absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full bg-white text-corp-blue shadow-sm active:scale-95"
-						onclick={openEditAcademic}
-					>
-						<Pencil class="size-4" />
-					</button>
+					{#if isAdmin}
+						<button
+							class="absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full bg-white text-corp-blue shadow-sm active:scale-95"
+							onclick={() => (showEditAcademicDialog = true)}
+						>
+							<Pencil class="size-4" />
+						</button>
+					{/if}
 					<div class="p-6 pb-4 text-center">
 						<div
 							class="mx-auto mb-4 flex size-24 items-center justify-center rounded-full bg-white/10 text-2xl font-bold tracking-widest text-white ring-2 ring-white/15"
@@ -277,7 +137,7 @@
 								<Calendar class="size-4 shrink-0 text-corp-yellow" />
 								<div>
 									<p class="text-white/90">{DateValue.formatDate(academic.birthDate)}</p>
-									<p class="text-xs text-white/60">{sexLabel(academic.sex)}</p>
+									<p class="text-xs text-white/60">{SEX_LABELS[academic.sex]}</p>
 								</div>
 							</div>
 						</div>
@@ -337,7 +197,7 @@
 							<div>
 								<p class="text-xs font-medium tracking-wide uppercase text-corp-gray">Planta</p>
 								<p class="mt-1 text-[15px] font-medium text-[#1a1a1a]">
-									{plantaLabel(academic.planta)}
+									{PLANTA_LABELS[academic.planta]}
 								</p>
 							</div>
 							<div>
@@ -347,7 +207,7 @@
 							<div>
 								<p class="text-xs font-medium tracking-wide uppercase text-corp-gray">Opción</p>
 								<p class="mt-1 text-[15px] font-medium text-[#1a1a1a]">
-									{optionLabel(academic.option)}
+									{ACADEMIC_OPTION_LABELS[academic.option]}
 								</p>
 							</div>
 							<div>
@@ -402,7 +262,7 @@
 												<Badge variant={slot.kind === "base" ? "base" : "advanced"}>
 													{slot.kind === "base" ? "Título Profesional" : "Grado Académico"}
 												</Badge>
-												{#if !slot.isPlaceholder}
+												{#if !slot.isPlaceholder && isAdmin}
 													<button
 														class="flex size-6 items-center justify-center rounded-md text-corp-gray/40 transition-colors hover:text-corp-blue"
 														onclick={() => openEdit(slot)}
@@ -411,7 +271,7 @@
 													</button>
 												{/if}
 											</div>
-											{#if slot.isPlaceholder}
+											{#if slot.isPlaceholder && isAdmin}
 												<button
 													class="mt-1 inline-flex items-center gap-1.5 text-sm text-corp-gray/50 transition-colors hover:text-corp-blue"
 													onclick={() => openCreate(slot.kind)}
@@ -441,143 +301,14 @@
 	{/if}
 </div>
 
-<Dialog bind:open={showDialog} title={editingDegree ? "Editar grado" : "Nuevo grado"}>
-	<form
-		class="grid gap-4"
-		onsubmit={(e) => {
-			e.preventDefault()
-			handleSave()
-		}}
-	>
-		<label class="grid gap-1.5">
-			<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Nombre</span>
-			<Input bind:value={name} placeholder="Ej: Magíster en Ciencias" required />
-		</label>
-		<label class="grid gap-1.5">
-			<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Universidad</span>
-			<Input bind:value={university} placeholder="Ej: Universidad Católica de Temuco" required />
-		</label>
-		<div class="grid grid-cols-2 gap-4">
-			<label class="grid gap-1.5">
-				<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Fecha</span>
-				<Input type="date" bind:value={obtainedAt} required />
-			</label>
-			{#if !editingDegree}
-				<label class="grid gap-1.5">
-					<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Tipo</span>
-					<Select
-						bind:value={kind}
-						items={[
-							{ value: "base", label: "Título Profesional" },
-							{ value: "advanced", label: "Grado Académico" },
-						]}
-					/>
-				</label>
-			{/if}
-		</div>
-		<label class="grid gap-1.5">
-			<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">País</span>
-			<Select items={countryItems} bind:value={countryCode} placeholder="Seleccionar país..." />
-		</label>
-		<div class="mt-2 flex justify-end gap-2">
-			<Button variant="secondary" type="button" onclick={() => (showDialog = false)}
-				>Cancelar</Button
-			>
-			<Button
-				type="submit"
-				disabled={createDeg.isPending ||
-					updateDeg.isPending ||
-					!name ||
-					!university ||
-					!obtainedAt ||
-					!countryCode}
-			>
-				{createDeg.isPending || updateDeg.isPending ? "Guardando..." : "Guardar"}
-			</Button>
-		</div>
-	</form>
-</Dialog>
+<DegreeDialog
+	academicId={id}
+	degree={editingDegree}
+	{createKind}
+	bind:open={showDegreeDialog}
+	onClose={() => (showDegreeDialog = false)}
+/>
 
-<Dialog bind:open={showEditAcademicDialog} title="Editar académico">
-	<form
-		class="grid gap-4"
-		onsubmit={(e) => {
-			e.preventDefault()
-			updateAcademic.mutate()
-		}}
-	>
-		<div class="grid grid-cols-2 gap-4">
-			<label class="grid gap-1.5">
-				<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Nombres</span>
-				<Input bind:value={editNames} />
-			</label>
-			<label class="grid gap-1.5">
-				<span class="text-xs font-medium tracking-wide uppercase text-corp-gray"
-					>Apellido paterno</span
-				>
-				<Input bind:value={editPaternalSurname} />
-			</label>
-			<label class="grid gap-1.5">
-				<span class="text-xs font-medium tracking-wide uppercase text-corp-gray"
-					>Apellido materno</span
-				>
-				<Input bind:value={editMaternalSurname} />
-			</label>
-			<label class="grid gap-1.5">
-				<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Email</span>
-				<Input type="email" bind:value={editEmail} />
-			</label>
-			<label class="grid gap-1.5">
-				<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">ORCID</span>
-				<Input bind:value={editOrcid} placeholder="0000-0000-0000-0000" />
-			</label>
-			<label class="grid gap-1.5">
-				<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Sexo</span>
-				<Select
-					bind:value={editSex}
-					items={[
-						{ value: "H", label: "Masculino" },
-						{ value: "M", label: "Femenino" },
-						{ value: "O", label: "Otro" },
-					]}
-				/>
-			</label>
-			<label class="grid gap-1.5">
-				<span class="text-xs font-medium tracking-wide uppercase text-corp-gray"
-					>Fecha de nacimiento</span
-				>
-				<Input type="date" bind:value={editBirthDate} />
-			</label>
-			<label class="grid gap-1.5">
-				<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Ciudad</span>
-				<Input bind:value={editCity} />
-			</label>
-			<label class="grid gap-1.5">
-				<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Nacionalidad</span>
-				<Select
-					items={countryItems}
-					bind:value={editNationalityCode}
-					placeholder="Seleccionar país..."
-				/>
-			</label>
-			<label class="grid gap-1.5">
-				<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">JCE</span>
-				<Input type="number" step="0.01" min="0" max="1" bind:value={editJce} />
-			</label>
-			<label class="grid gap-1.5">
-				<span class="text-xs font-medium tracking-wide uppercase text-corp-gray"
-					>Horas descuento anual</span
-				>
-				<Input type="number" step="0.5" min="0" bind:value={editAnnualDiscountHours} />
-			</label>
-		</div>
-		<div class="mt-2 flex justify-end gap-2">
-			<Button variant="secondary" type="button" onclick={() => (showEditAcademicDialog = false)}
-				>Cancelar</Button
-			>
-			<Button type="submit" disabled={updateAcademic.isPending}>
-				{updateAcademic.isPending ? "Guardando..." : "Guardar"}
-			</Button>
-		</div>
-	</form>
-</Dialog>
+{#if isAdmin && academic}
+	<AcademicEditDialog {academic} bind:open={showEditAcademicDialog} onClose={closeEditAcademic} />
+{/if}

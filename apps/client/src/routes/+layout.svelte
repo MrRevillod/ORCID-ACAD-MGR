@@ -4,7 +4,7 @@
 	import { Toaster } from "svelte-sonner"
 	import { queryClient } from "$lib/shared/http/query-client"
 	import { QueryClientProvider } from "@tanstack/svelte-query"
-	import Header from "$lib/components/Header.svelte"
+	import Header from "$lib/shared/components/Header.svelte"
 
 	import "./layout.css"
 

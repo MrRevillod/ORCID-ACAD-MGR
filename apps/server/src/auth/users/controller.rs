@@ -43,4 +43,21 @@ impl UsersController {
 
         Ok(user)
     }
+
+    #[put("/{id}")]
+    pub async fn update_user(&self, req: Request) -> WebResult<UserView> {
+        let id = req.param::<UserId>("id")?;
+        let dto = req.body_validator::<UpdateUserDto>()?;
+        let user = self.users.update(&id, dto).await?;
+
+        Ok(user)
+    }
+
+    #[delete("/{id}")]
+    pub async fn delete_user(&self, req: Request) -> WebResult<()> {
+        let id = req.param::<UserId>("id")?;
+        self.users.delete(&id).await?;
+
+        Ok(())
+    }
 }

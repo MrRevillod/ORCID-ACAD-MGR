@@ -4,45 +4,25 @@
 		createMutation as createTanMutation,
 		useQueryClient,
 	} from "@tanstack/svelte-query"
-	import { categoriesService } from "$lib/services/categories.service"
-	import Dialog from "$lib/components/ui/dialog.svelte"
-	import Button from "$lib/components/ui/button.svelte"
-	import Select from "$lib/components/ui/select.svelte"
-	import Input from "$lib/components/ui/input.svelte"
-	import Badge from "$lib/components/ui/badge.svelte"
+	import { categoryService } from "$lib/academic/categories/service"
+	import CategoryDialog from "$lib/academic/categories/components/category-dialog.svelte"
+	import Button from "$lib/shared/components/ui/button.svelte"
+	import Badge from "$lib/shared/components/ui/badge.svelte"
 	import { Plus, Loader2, Trash2 } from "@lucide/svelte"
-	import { toast } from "svelte-sonner"
-	import type { AcademicPlanta } from "$lib/types"
-	import { ACADEMIC_PLANTA } from "$lib/types"
 
 	const queryClient = useQueryClient()
 
 	const query = createQuery(() => ({
 		queryKey: ["admin", "categories"],
-		queryFn: () => categoriesService.list(),
+		queryFn: () => categoryService.list(),
 	}))
 
 	let showCreate = $state(false)
-	let name = $state("")
-	let planta = $state<AcademicPlanta>("permanente")
-
-	const createCat = createTanMutation(() => ({
-		mutationFn: () => categoriesService.create({ name, planta }),
-		onSuccess: () => {
-			void queryClient.invalidateQueries({ queryKey: ["admin", "categories"] })
-			toast.success("Categoría creada")
-			showCreate = false
-			name = ""
-			planta = "permanente"
-		},
-		onError: () => toast.error("Error al crear la categoría"),
-	}))
 
 	const deleteCat = createTanMutation(() => ({
 		mutationFn: (_id: string) => Promise.resolve(),
 		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: ["admin", "categories"] })
-			toast.success("Categoría eliminada")
 		},
 	}))
 </script>
@@ -84,7 +64,7 @@
 						<tr class="border-b border-corp-gray/10 even:bg-gray-50 last:border-0">
 							<td class="px-4 py-3 text-[#1A1A1A]">{cat.name}</td>
 							<td class="px-4 py-3">
-								<Badge variant={cat.planta === "permanente" ? "base" : "advanced"}>
+								<Badge variant={cat.planta === "permanente" ? "advanced" : "base"}>
 									{cat.planta === "permanente" ? "Permanente" : "Adjunta"}
 								</Badge>
 							</td>
@@ -107,35 +87,4 @@
 	{/if}
 </div>
 
-<Dialog bind:open={showCreate} title="Nueva categoría">
-	<form
-		class="grid gap-4"
-		onsubmit={(e) => {
-			e.preventDefault()
-			createCat.mutate()
-		}}
-	>
-		<label class="grid gap-1.5">
-			<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Nombre</span>
-			<Input bind:value={name} placeholder="Ej: Profesor Titular" required />
-		</label>
-		<label class="grid gap-1.5">
-			<span class="text-xs font-medium tracking-wide uppercase text-corp-gray">Planta</span>
-			<Select
-				bind:value={planta}
-				items={ACADEMIC_PLANTA.map((p) => ({
-					value: p,
-					label: p === "permanente" ? "Permanente" : "Adjunta",
-				}))}
-			/>
-		</label>
-		<div class="mt-2 flex justify-end gap-2">
-			<Button variant="secondary" type="button" onclick={() => (showCreate = false)}
-				>Cancelar</Button
-			>
-			<Button type="submit" disabled={createCat.isPending || !name}>
-				{createCat.isPending ? "Creando..." : "Crear"}
-			</Button>
-		</div>
-	</form>
-</Dialog>
+<CategoryDialog bind:open={showCreate} onClose={() => (showCreate = false)} />

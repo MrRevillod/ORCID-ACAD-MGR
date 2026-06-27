@@ -6,6 +6,21 @@ const config = {
 		adapter: adapter({
 			fallback: "index.html",
 		}),
+		alias: {
+			"$academics": "src/lib/academic/academics",
+			"$categories": "src/lib/academic/categories",
+			"$degrees": "src/lib/academic/degrees",
+			"$options": "src/lib/academic/options",
+			"$auth": "src/lib/auth",
+			"$shared": "src/lib/shared",
+			"$careers": "src/lib/university/careers",
+			"$departments": "src/lib/university/departments",
+			"$faculties": "src/lib/university/faculties",
+			"$work-positions": "src/lib/university/work-positions",
+		},
+	},
+	compilerOptions: {
+		runes: ({ filename }) => (filename.split(/[/\\]/).includes("node_modules") ? undefined : true),
 	},
 }
 

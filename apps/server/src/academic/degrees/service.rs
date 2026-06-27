@@ -22,7 +22,7 @@ impl DegreesService {
             .country_code(input.country_code)
             .build();
 
-        self.degrees.save(&degree).await?;
+        self.degrees.create(&degree).await?;
 
         Ok(degree)
     }
@@ -48,7 +48,7 @@ impl DegreesService {
             degree.country_code = country_code;
         }
 
-        self.degrees.save(&degree).await?;
+        self.degrees.update(&degree).await?;
 
         Ok(degree)
     }

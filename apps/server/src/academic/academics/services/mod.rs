@@ -52,19 +52,18 @@ impl AcademicsService {
             return Err(AcademicError::AcademicOrcidAlreadyExists)?;
         }
 
-        if self
-            .departments
-            .find_by_id(&academic.department_id)
-            .await?
-            .is_none()
-        {
+        let Some(depto) = self.departments.find_by_id(&academic.department_id).await? else {
             return Err(UniversityError::DepartmentNotFound)?;
-        }
+        };
 
-        if let Some(career_id) = academic.career_id
-            && self.careers.find_by_id(&career_id).await?.is_none()
-        {
-            return Err(UniversityError::CareerNotFound)?;
+        if let Some(career_id) = academic.career_id {
+            let Some(career) = self.careers.find_by_id(&career_id).await? else {
+                return Err(UniversityError::CareerNotFound)?;
+            };
+
+            if career.department_id != depto.id {
+                return Err(UniversityError::CareerDepartmentMismatch)?;
+            }
         }
 
         self.academics.save(&academic).await?;

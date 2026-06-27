@@ -1,7 +1,14 @@
 <script lang="ts">
 	import type { Snippet } from "svelte"
 	import { page } from "$app/stores"
-	import { Tags, ListOrdered, Briefcase, LayoutDashboard } from "@lucide/svelte"
+	import {
+		Tags,
+		ListOrdered,
+		Briefcase,
+		LayoutDashboard,
+		GraduationCap,
+		Users,
+	} from "@lucide/svelte"
 
 	let { children }: { children: Snippet } = $props()
 
@@ -10,6 +17,8 @@
 		{ href: "/admin/categories", label: "Categorías", icon: Tags },
 		{ href: "/admin/options", label: "Opciones", icon: ListOrdered },
 		{ href: "/admin/positions", label: "Cargos", icon: Briefcase },
+		{ href: "/academics", label: "Académicos", icon: GraduationCap },
+		{ href: "/admin/users", label: "Usuarios", icon: Users },
 	] as const
 </script>
 

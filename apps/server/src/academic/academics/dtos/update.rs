@@ -51,7 +51,7 @@ pub struct UpdateAcademicDto {
     #[validate(range(
         min = 0.0,
         max = 1.0,
-        message = "Las horas de trabajo en la universidad no pueden ser negativas"
+        message = "La JCE debe estar entre 0.0 y 1.0"
     ))]
     pub jce: Option<f64>,
 

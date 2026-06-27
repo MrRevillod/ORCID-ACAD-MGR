@@ -1,34 +1,40 @@
 <script lang="ts">
 	import { createQuery } from "@tanstack/svelte-query"
-	import { academicsService } from "$lib/services/academics.service"
-	import { categoriesService } from "$lib/services/categories.service"
-	import { optionsService } from "$lib/services/options.service"
-	import { positionsService } from "$lib/services/positions.service"
-	import { Users, Tags, ListOrdered, Briefcase } from "@lucide/svelte"
+	import { academicService } from "$lib/academic/academics/service"
+	import { categoryService } from "$lib/academic/categories/service"
+	import { optionService } from "$lib/academic/options/service"
+	import { positionService } from "$lib/university/work-positions/service"
+	import { userService } from "$lib/auth/users.service"
+	import { GraduationCap, Users, Tags, ListOrdered, Briefcase } from "@lucide/svelte"
 
 	const academicsQuery = createQuery(() => ({
 		queryKey: ["admin", "academics"],
-		queryFn: () => academicsService.list(),
+		queryFn: () => academicService.list(),
+	}))
+
+	const usersQuery = createQuery(() => ({
+		queryKey: ["admin", "users"],
+		queryFn: () => userService.list(),
 	}))
 
 	const categoriesQuery = createQuery(() => ({
 		queryKey: ["admin", "categories"],
-		queryFn: () => categoriesService.list(),
+		queryFn: () => categoryService.list(),
 	}))
 
 	const optionsQuery = createQuery(() => ({
 		queryKey: ["admin", "options"],
-		queryFn: () => optionsService.list(),
+		queryFn: () => optionService.list(),
 	}))
 
 	const positionsQuery = createQuery(() => ({
 		queryKey: ["admin", "positions"],
-		queryFn: () => positionsService.list(),
+		queryFn: () => positionService.list(),
 	}))
 </script>
 
 <div>
-	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
 		<a
 			href="/admin/categories"
 			class="rounded-xl border border-corp-gray/20 bg-white p-5 transition-colors hover:border-corp-blue/30"
@@ -68,14 +74,30 @@
 			<p class="text-xs font-medium tracking-wide uppercase text-corp-gray">Cargos</p>
 		</a>
 
-		<div class="rounded-xl border border-corp-gray/20 bg-white p-5">
+		<a
+			href="/academics"
+			class="rounded-xl border border-corp-gray/20 bg-white p-5 transition-colors hover:border-corp-blue/30"
+		>
+			<div
+				class="flex size-10 items-center justify-center rounded-lg bg-corp-blue/10 text-corp-blue"
+			>
+				<GraduationCap class="size-5" />
+			</div>
+			<p class="mt-3 text-lg font-semibold text-[#1A1A1A]">{academicsQuery.data?.length ?? "—"}</p>
+			<p class="text-xs font-medium tracking-wide uppercase text-corp-gray">Académicos</p>
+		</a>
+
+		<a
+			href="/admin/users"
+			class="rounded-xl border border-corp-gray/20 bg-white p-5 transition-colors hover:border-corp-blue/30"
+		>
 			<div
 				class="flex size-10 items-center justify-center rounded-lg bg-corp-blue/10 text-corp-blue"
 			>
 				<Users class="size-5" />
 			</div>
-			<p class="mt-3 text-lg font-semibold text-[#1A1A1A]">{academicsQuery.data?.length ?? "—"}</p>
-			<p class="text-xs font-medium tracking-wide uppercase text-corp-gray">Académicos</p>
-		</div>
+			<p class="mt-3 text-lg font-semibold text-[#1A1A1A]">{usersQuery.data?.length ?? "—"}</p>
+			<p class="text-xs font-medium tracking-wide uppercase text-corp-gray">Usuarios</p>
+		</a>
 	</div>
 </div>
