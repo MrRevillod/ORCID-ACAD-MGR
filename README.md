@@ -14,7 +14,7 @@ Actualmente la universidad gestiona la información de publicaciones académicas
 
 ## PostgresDB Entity Relationship Diagram (ERD)
 
-![ERD](.docs/erd/V6.png)
+![ERD](.docs/erd/V7.png)
 
 ---
 
